@@ -110,9 +110,18 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
-        // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+        board.setViewingPerspective(side);
+        int size = board.size();
+        for (int col = 0; col < size; col ++){
+            boolean temp = tiltCol(col);
+            if (temp){
+                changed = true;
+            }
+        }
+
+        board.setViewingPerspective(Side.NORTH);
 
         checkGameOver();
         if (changed) {
@@ -120,6 +129,52 @@ public class Model extends Observable {
         }
         return changed;
     }
+    /**helper function for tilt that processes a single column of the board
+     if top, don't move, look for next tile (so start from size - 2)
+     if null, don't move, look for next tile
+
+     */
+
+    public boolean tiltCol(int col) {
+        int size = board.size();
+        boolean changed = false;
+        boolean[] merged = new boolean[size];
+        for (int i = 0; i < size; i ++) {
+            merged[i] = false;
+        }
+
+        for (int row = size - 1; row >= 0; row --) {
+            Tile cur_tile = board.tile(col, row);
+
+            if (cur_tile != null & row != size - 1) {
+                for (int next_row = row + 1; next_row < size; next_row++) {
+                    //if next is top, move or merge (merged = false)
+                    Tile next_tile = board.tile(col, next_row);
+
+                    //if next is null, continue
+                    //if next is top or not null, move (if next > row + 1) or merge(merged = false)
+                    if (next_tile != null) {
+                        if (next_tile.value() == cur_tile.value() && !merged[next_row]) {
+                            score += cur_tile.value() * 2;
+                            merged[next_row] = board.move(col, next_row, cur_tile);
+                        } else if (next_row > row + 1){
+                            board.move(col, next_row - 1, cur_tile);
+                            changed = true;
+                            //null top
+                        }
+                    } else if (next_row == size - 1) {
+                        board.move(col, next_row, cur_tile);
+                        changed = true;
+                    }
+
+                    }
+                }
+            }
+        return changed;
+    }
+
+
+
 
     /** Checks if the game is over and sets the gameOver variable
      *  appropriately.
@@ -137,7 +192,15 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+
+        int size = b.size(); //size() returns board size
+        for (int col = 0; col < size; col++) {
+            for (int row = 0; row < size; row++) {
+                if (b.tile(col,row) == null){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -147,7 +210,16 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        int size = b.size();
+        for (int col = 0; col < size; col++) {
+            for (int row = 0; row < size; row++) {
+                Tile t = b.tile(col,row);
+                //only when t is not null do we check the value
+                if (t != null && t.value() == MAX_PIECE){
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -158,9 +230,44 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
-        return false;
+        //There is at least one empty space on the board.
+        if (emptySpaceExists(b)){
+            return true;
+        }
+        //2.There are two adjacent tiles with the same value. (col +/-1, row) (col, row +/- 1)
+        int size = b.size();
+        for (int col = 0; col < size; col++) {
+            for (int row = 0; row < size; row++) {
+                Tile cur_t = b.tile(col, row);
+                if (row - 1 >= 0) {
+                    Tile left_t = b.tile(col, row - 1);
+                    if (cur_t.value() == left_t.value()) {
+                        return true;
+                    }
+                }
+               if (row + 1 < size) {
+                   Tile right_t = b.tile(col, row + 1);
+                   if (cur_t.value() == right_t.value()) {
+                       return true;
+                   }
+               }
+               if (col - 1 >= 0) {
+                   Tile up_t = b.tile(col - 1, row);
+                   if (cur_t.value() == up_t.value()) {
+                       return true;
+                   }
+               }
+               if (col + 1 < size) {
+                   Tile down_t = b.tile(col + 1, row);
+                   if (cur_t.value() == down_t.value()) {
+                       return true;
+                   }
+               }
+           }
+       }
+       return false;
     }
+
 
 
     @Override
