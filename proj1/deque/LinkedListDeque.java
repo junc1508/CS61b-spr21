@@ -1,8 +1,9 @@
 package deque;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
-public class LinkedListDeque<T> {
+public class LinkedListDeque<T> implements Iterable<T> {
 
     /* nested LinkedList class.*/
     public class LinkedList {
@@ -155,15 +156,52 @@ public class LinkedListDeque<T> {
 
     /**The Deque objects we’ll make are iterable (i.e. Iterable<T>)
      * so we must provide this method to return an iterator.
+     * implement iterable<T> for the LLDeque class
+     * implement iterator<T> for the iterator
+     * hasNext() and next() method*/
     public Iterator<T> iterator(){
+        return new LLDequeIterator();
+    }
+    private class LLDequeIterator implements Iterator<T>{
+        private int pos;
+        //constructor for iterator
+        public LLDequeIterator() {
+            pos = 0;
+        }
 
-    }*/
+        @Override
+        public boolean hasNext() {
+            return pos < size;
+        }
+
+        @Override
+        public T next() {
+            T returnItem = get(pos);
+            pos = pos + 1;
+            return returnItem;
+        }
+    }
 
     /** Returns whether or not the parameter o is equal to the Deque.
      * o is considered equal if it is a Deque and if it contains the same contents
-     * (as goverened by the generic T’s equals method) in the same order
+     * (as goverened by the generic T’s equals method) in the same order */
+    @Override
     public boolean equals(Object o){
-     instanceof LinkedListDeque || instanceof ArrayDeque
-
-    } */
+        if (o == null){
+            return false;
+        }if (this == o) {
+            return true;
+        } if (this.getClass() != o.getClass()){
+            return false; //if object o is not a deque
+        }
+        LinkedListDeque<T> other = (LinkedListDeque<T>) o;
+        if (this.size() != other.size()){
+            return false;
+        } for (int i = 0; i < size; i++){
+            if(this.get(i) != other.get(i)){
+                return false;
+            }
+        }
+        return true;
+    }
 }

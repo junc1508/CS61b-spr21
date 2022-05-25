@@ -38,17 +38,17 @@ public class ArrayDequeTest {
     @Test
     /* test the addFirst, addLast and resize */
     public void addTest() {
-         ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
-         for (int i = 0; i < 15; i++) {
-         ad1.addFirst(i);
-         }
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 15; i++) {
+            ad1.addFirst(i);
+        }
 
-         for (int j= 15; j < 32; j++) {
-         ad1.addLast(j);
-         }
-         for (int k = 0; k < 32;k++) {
-             System.out.println(ad1.get(k));
-         }
+        for (int j = 15; j < 32; j++) {
+            ad1.addLast(j);
+        }
+        for (int k = 0; k < 32; k++) {
+            System.out.println(ad1.get(k));
+        }
     }
 
     @Test
@@ -59,15 +59,15 @@ public class ArrayDequeTest {
             ad1.addFirst(i);
         }
 
-        for (int j= 0; j < 12; j++) {
+        for (int j = 0; j < 12; j++) {
             ad1.removeLast();
         }
 
-        for (int l= 0; l < 30; l++) {
+        for (int l = 0; l < 30; l++) {
             ad1.removeFirst();
         }
 
-        for (int k = 0; k < 16;k++) {
+        for (int k = 0; k < 16; k++) {
             System.out.println(ad1.get(k));
         }
     }
@@ -91,17 +91,17 @@ public class ArrayDequeTest {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
+    /**@Test
+    /** test the iterator function.
+    public void iteratorTest(){
+        ArrayDeque<Integer> ad1 = new ArrayDeque<Integer>();
+        for (int i = 0; i < 10; i++) {
+            ad1.addLast(i);
+        }
+        for(int i : ad1) {
+            System.out.println(i);
+        }
+    } */
 
     }
 

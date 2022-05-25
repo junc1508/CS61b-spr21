@@ -1,6 +1,9 @@
 package deque;
 
-public class ArrayDeque <T> {
+import java.util.Iterator;
+
+public class ArrayDeque<T> {
+
     private int size;
     private T[] items;
     private int nextFirst;
@@ -177,18 +180,6 @@ public class ArrayDeque <T> {
         return items[index];
     }
 
-    /**The Deque objects we’ll make are iterable (i.e. Iterable<T>)
-     * so we must provide this method to return an iterator.
-     public Iterator<T> iterator(){
 
-     }*/
-
-    /** Returns whether or not the parameter o is equal to the Deque.
-     * o is considered equal if it is a Deque and if it contains the same contents
-     * (as goverened by the generic T’s equals method) in the same order
-     public boolean equals(Object o){
-     instanceof LinkedListDeque || instanceof ArrayDeque
-
-     } */
 
 }
