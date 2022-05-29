@@ -2,7 +2,7 @@ package deque;
 
 import java.util.Iterator;
 
-public class ArrayDeque<T> {
+public class ArrayDeque<T> implements Deque<T> {
 
     private int size;
     private T[] items;
@@ -53,7 +53,7 @@ public class ArrayDeque<T> {
         }
     }
 
-
+    @Override
     /**
      * Adds an item of type T to the front of the deque,
      * if the front item is at position 0, add to last.
@@ -76,6 +76,7 @@ public class ArrayDeque<T> {
 
     }
 
+    @Override
     /**
      * Adds an item of type T to the back of the deque.
      * If the last item is at length - 1, add to last.
@@ -96,16 +97,9 @@ public class ArrayDeque<T> {
 
     }
 
-    /**
-     * Returns true if deque is empty, false otherwise.
-     */
-    public boolean isEmpty() {
-        if (size == 0) {
-            return true;
-        }
-        return false;
-    }
 
+
+    @Override
     /**
      * Returns the number of items in the deque.
      */
@@ -121,6 +115,7 @@ public class ArrayDeque<T> {
 
     }
 
+    @Override
     /** Removes and returns the item at the front of the deque.
      * if size < length/4, resize to length/4
      * if nextFirst is last, remove first.
@@ -147,6 +142,7 @@ public class ArrayDeque<T> {
         return first;
     }
 
+    @Override
     /**Removes and returns the item at the back of the deque.
      * If no such item exists, returns null.
      * sentinel.prev is last */
@@ -173,11 +169,16 @@ public class ArrayDeque<T> {
 
     }
 
+    @Override
     /**Gets the item at the given index, where 0 is the front,
      * 1 is the next item, and so forth. If no such item exists,
      * returns null. Must not alter the deque! */
     public T get(int index){
         return items[index];
+    }
+
+    public int length(){
+        return items.length;
     }
 
 
