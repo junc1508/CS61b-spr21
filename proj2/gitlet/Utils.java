@@ -40,11 +40,12 @@ class Utils {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             for (Object val : vals) {
                 if (val instanceof byte[]) {
+
                     md.update((byte[]) val);
                 } else if (val instanceof String) {
                     md.update(((String) val).getBytes(StandardCharsets.UTF_8));
                 } else {
-                    throw new IllegalArgumentException("improper type to sha1");
+                    throw new IllegalArgumentException("improper type to sha1 "+val);
                 }
             }
             Formatter result = new Formatter();
