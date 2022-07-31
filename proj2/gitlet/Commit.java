@@ -118,7 +118,7 @@ public class Commit implements Serializable {
         if (secondParent.isEmpty()){
             return String.format("=== %ncommit %s %nDate: %s%n%s%n%n",id,generateTime(),message);
         } else {
-            return String.format("commit %s %nMerge: %s %s %nDate: %s%n%s%n%n",id,parent.substring(0,8), secondParent.substring(0,8),generateTime(),message);
+            return String.format("=== %ncommit %s %nMerge: %s %s %nDate: %s%n%s%n%n",id,parent.substring(0,8), secondParent.substring(0,8),generateTime(),message);
         }
     }
 

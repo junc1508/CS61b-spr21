@@ -119,27 +119,29 @@ public class Repository {
      * */
     public static void commit(String message){
         if (stagingArea.getAdd().isEmpty() && stagingArea.getRemove().isEmpty()){
-            System.out.println("No changes added to the commit.");
+            Utils.message("No changes added to the commit.");
             System.exit(0);
-        }
-        /** clone the parent commit from HEAD and get informations.*/
-        String parent = getHeadCommit();
-        /** new blobs for commit from staging area.*/
-        HashMap<String, String> trackedFile = stagingArea.getTracked();
+        } else {
+            /** clone the parent commit from HEAD and get informations.*/
 
-        /** create and save commit, the instruction clone the old commit */
-        Commit newCommit = new Commit(message,parent,"",trackedFile);
-        newCommit.saveCommit();
-        /** clear staging area and set the tracked file. */
-        stagingArea.clear();
-        stagingArea.setTracked(trackedFile);
-        stagingArea.save();
-        /** update branch pointer and head pointer.
-         * Save branch, head and current branch name. */
-        String currBranchName = Utils.readContentsAsString(CURBRANCH);
-        Branch currBranch = new Branch(newCommit.getCommitID(), currBranchName);
-        currBranch.saveBranch();
-        currBranch.saveHEAD(); //don't need to update the current branch since it is the same.
+            String parent = getHeadCommit();
+            /** new blobs for commit from staging area.*/
+            HashMap<String, String> trackedFile = stagingArea.getTracked();
+
+            /** create and save commit, the instruction clone the old commit */
+            Commit newCommit = new Commit(message,parent,"",trackedFile);
+            newCommit.saveCommit();
+            /** clear staging area and set the tracked file. */
+            stagingArea.clear();
+            stagingArea.setTracked(trackedFile);
+            stagingArea.save();
+            /** update branch pointer and head pointer.
+             * Save branch, head and current branch name. */
+            String currBranchName = Utils.readContentsAsString(CURBRANCH);
+            Branch currBranch = new Branch(newCommit.getCommitID(), currBranchName);
+            currBranch.saveBranch();
+            currBranch.saveHEAD(); //don't need to update the current branch since it is the same.
+        }
     }
 
     /** get HEAD commit id. */
@@ -167,10 +169,10 @@ public class Repository {
         Commit currCommit = Commit.fromFile(currCommitID);
         String parentID = currCommit.getParent();
         str.append(currCommit.toLog());
-        if (!parentID.isEmpty()) {
-            Commit nextCommit = Commit.fromFile(parentID);
-            str.append(nextCommit.toLog());
-            parentID = nextCommit.getParent();
+        while (!parentID.isEmpty()) {
+            currCommit = Commit.fromFile(parentID);
+            str.append(currCommit.toLog());
+            parentID = currCommit.getParent();
         }
         str.deleteCharAt(str.length()-1);
         System.out.println(str);
