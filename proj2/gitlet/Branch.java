@@ -1,11 +1,8 @@
 package gitlet;
 
-import jdk.jshell.execution.Util;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.List;
 
 public class Branch implements Serializable {
     /** current branch name. */
@@ -15,7 +12,7 @@ public class Branch implements Serializable {
     private String headCommitID;
 
     /** constructor for init. */
-    public Branch(String initCommit){
+    public Branch(String initCommit) {
         this.branchName = "master";
         this.headCommitID = initCommit;
     }
@@ -28,7 +25,7 @@ public class Branch implements Serializable {
         this.headCommitID = commit; //the SHA-1 ID for last commit of current branch
     }
     /** get head commit ID. */
-    public String getHEAD(){
+    public String getHEAD() {
         return headCommitID;
     }
     /**save branch file.*/
@@ -38,17 +35,17 @@ public class Branch implements Serializable {
     }
     /** Read branch file.
      * TODO: NEED TO UPDATE */
-    public static Branch fromFile(File f){
+    public static Branch fromFile(File f) {
         return Utils.readObject(f, Branch.class);
     }
     /** save current HEAD commit ID.*/
-    public void saveHEAD(){
+    public void saveHEAD() {
         File headFile = Utils.join(Repository.HEAD);
         Utils.writeContents(headFile,this.headCommitID);
     }
 
     /** Save current branch name. */
-    public void saveCurBranchName(){
+    public void saveCurBranchName() {
         File curBranch = Utils.join(Repository.CURBRANCH);
         Utils.writeContents(curBranch,branchName);
     }
