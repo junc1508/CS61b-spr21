@@ -148,6 +148,10 @@ public class Repository {
     public static String getHeadCommit(){
         return Utils.readContentsAsString(HEAD);
     }
+    /** Update current HEAD commit id. */
+    public static void setHead(String HEADcommitID) {
+        Utils.writeContents(HEAD,HEADcommitID);
+    }
 
     /** remove from stage or (CWD and tracked). */
     public static void rm(String file){
@@ -390,18 +394,13 @@ public class Repository {
             } else if (!getUntracked().isEmpty()){  //there is untracked/uncommited changes in current commit
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             } else {
-
                 Branch checkBranch =Utils.readObject(branchFile,Branch.class);
                 String checkCommitID = checkBranch.getHEAD();
                 File checkCommitFile = Utils.join(COMMIT_DIR,checkCommitID);
                 Commit checkCommit = Utils.readObject(checkCommitFile,Commit.class);
-                //copy all the files from check commit to CWD, overwrite existing files.
-                for (String i : checkCommit.getBlobList().keySet()){
-                    File file = Utils.join(CWD,i);
-                    String blobID =checkCommit.getBlobList().get(i);
-                    Utils.writeContents(file,getContentFromSavedBlob(blobID));
-                }
-                //delete files that are in current commit but absent in check commit.
+                /**copy all the files from check commit to CWD, overwrite existing files. */
+                copyFilesFromCommit(checkCommit);
+                /**delete files that are in current commit but absent in check commit. */
                 deleteExtraFile(checkCommit);
                 stagingArea.clear();
                 stagingArea.setTracked(checkCommit.getBlobList()); //set tracked files to original files.
@@ -414,6 +413,15 @@ public class Repository {
             System.exit(0);//wrong branch name
         }
     }
+    /**copy all the files from check commit to CWD, overwrite existing files. */
+    public static void copyFilesFromCommit (Commit checkCommit){
+        for (String i : checkCommit.getBlobList().keySet()){
+            File file = Utils.join(CWD, i);
+            String blobID = checkCommit.getBlobList().get(i);
+            Utils.writeContents(file, getContentFromSavedBlob(blobID));
+        }
+    }
+
     /** delete files that are in current commit but not in commit 1.*/
     public static void deleteExtraFile(Commit commit1){
         for (String i : stagingArea.getTracked().keySet()){
@@ -454,6 +462,36 @@ public class Repository {
                 System.out.println("A branch with that name does not exist.");
                 System.exit(0);
             }
+        }
+    }
+
+    /**Checks out all the files tracked by the given commit.
+     * Removes tracked files that are not present in that commit.
+     * Also moves the current branch’s head to that commit node.
+     * The [commit id] may be abbreviated as for checkout.
+     * The staging area is cleared.
+     * The command is essentially checkout of an arbitrary commit that
+     * also changes the current branch head.*/
+    public static void reset(String commitID){
+        List<String> allCommits = Utils.plainFilenamesIn(COMMIT_DIR);
+        if (!allCommits.contains(commitID)){
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        } else if (!getUntracked().isEmpty()){  //there is untracked/uncommited changes in current commit
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        } else {
+            File resetCommitFile = Utils.join(COMMIT_DIR,commitID);
+            Commit resetCommit = Utils.readObject(resetCommitFile,Commit.class);
+            /** copy all the files from check commit to CWD, overwrite existing files. */
+            copyFilesFromCommit(resetCommit);
+            /** delete files that are in current commit but absent in check commit. */
+            deleteExtraFile(resetCommit);
+            stagingArea.clear();
+            /** set tracked files to original files. */
+            stagingArea.setTracked(resetCommit.getBlobList());
+            /** moves the current branch’s head to that commit node */
+            setHead(commitID);
         }
     }
 }

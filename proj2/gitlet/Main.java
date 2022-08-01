@@ -98,6 +98,16 @@ public class Main {
                 }
                 break;
 
+            case "reset":
+                String resetCommit;
+                try {
+                    resetCommit = args[1];
+                    reset(resetCommit);
+                } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+                    Utils.message("Please enter commit ID for reset.");
+                }
+                break;
+
             // TODO: FILL THE REST IN
             /**have to put this at last, if put branch() after this,
              *  case 3 and 4 will run branch() and create branch -- and branch commitID for some reason.*/
