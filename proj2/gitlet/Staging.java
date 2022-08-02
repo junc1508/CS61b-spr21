@@ -29,7 +29,7 @@ public class Staging implements Serializable {
         this.fileToRemove = new HashMap<String, String>();
     }
     /** get the files staged for adding. */
-    public HashMap<String,String> getAdd() {
+    public HashMap<String, String> getAdd() {
         return fileToAdd;
     }
     /** get the files staged for removing. */
@@ -50,13 +50,11 @@ public class Staging implements Serializable {
          */
         if (prevID == null) {
             fileToBlob.save();
-            fileToAdd.put(fileName,blobID);
-        }
-        /** if it is tracked, compare if the blobID is the same with equals not ==. if it is the same as current
-         * working version, remove from fileToAdd and fileToRemove; do not save.
-         TODO: NEED TO UPDATE
-         */
-        else if (prevID.equals(blobID)) {
+            fileToAdd.put(fileName, blobID);
+        } else if (prevID.equals(blobID)) {
+        /** if it is tracked, compare if the blobID is the same with equals
+         * not ==. if it is the same as current working version,
+         * remove from fileToAdd and fileToRemove; do not save. */
             rm(file);
             String removeID = fileToRemove.get(fileName);
             if (removeID != null) {
@@ -66,7 +64,7 @@ public class Staging implements Serializable {
              * update the latest version and save the fileToBlob. */
         } else {
             fileToBlob.save();
-            fileToAdd.put(fileName,blobID);
+            fileToAdd.put(fileName, blobID);
         }
     }
 
@@ -82,7 +80,7 @@ public class Staging implements Serializable {
         if (staged != null) {
             fileToAdd.remove(fileName);
             /** 2) tracked */
-        } else if(prevID != null) {
+        } else if (prevID != null) {
             fileToRemove.put(fileName, prevID);
             Utils.restrictedDelete(file);
             //failure case;
@@ -111,12 +109,12 @@ public class Staging implements Serializable {
     public HashMap<String, String> getTracked() {
         HashMap<String, String> newBlobs = new HashMap<>();
         newBlobs.putAll(tracked);
-        if (fileToAdd != null){
+        if (fileToAdd != null) {
             newBlobs.putAll(fileToAdd);
         }
-        if (fileToRemove != null){
-            for (String i : fileToRemove.keySet()){
-                if (tracked.containsKey(i)){
+        if (fileToRemove != null) {
+            for (String i : fileToRemove.keySet()) {
+                if (tracked.containsKey(i)) {
                     tracked.remove(i);
                 }
             }

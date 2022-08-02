@@ -47,7 +47,11 @@ public class Main {
                 String message;
                 try {
                     message = args[1];
-                    commit(message);
+                    if (message.isEmpty()) {
+                        Utils.message("Please enter a commit message.");
+                    } else {
+                        commit(message);
+                    }
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
                     Utils.message("Please enter a commit message.");
                 }
@@ -126,7 +130,7 @@ public class Main {
 
                     case 2: //checkout [branch name]
                         String branchName = args[1];
-                        Repository.checkout_branch(branchName);
+                        Repository.checkoutBranch(branchName);
                         break;
                 }
 

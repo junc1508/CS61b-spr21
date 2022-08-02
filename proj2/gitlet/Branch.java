@@ -17,9 +17,7 @@ public class Branch implements Serializable {
         this.headCommitID = initCommit;
     }
 
-    /** constructor for branch with branch name.
-     TODO: NEED TO UPDATE
-     * */
+    /** constructor for branch with branch name. */
     public Branch(String commit, String name) {
         this.branchName = name;
         this.headCommitID = commit; //the SHA-1 ID for last commit of current branch
@@ -34,20 +32,19 @@ public class Branch implements Serializable {
         Utils.writeObject(branchFile, this);
     }
     /** Read branch file.
-     * TODO: NEED TO UPDATE */
     public static Branch fromFile(File f) {
         return Utils.readObject(f, Branch.class);
     }
     /** save current HEAD commit ID.*/
     public void saveHEAD() {
         File headFile = Utils.join(Repository.HEAD);
-        Utils.writeContents(headFile,this.headCommitID);
+        Utils.writeContents(headFile, this.headCommitID);
     }
 
     /** Save current branch name. */
     public void saveCurBranchName() {
         File curBranch = Utils.join(Repository.CURBRANCH);
-        Utils.writeContents(curBranch,branchName);
+        Utils.writeContents(curBranch, branchName);
     }
 
 

@@ -23,7 +23,7 @@ public class Commit implements Serializable {
     private final Date currTime;
     /** mapping of blobs reference (key: SHA-1 file name) to original file names (value).
      * Have to use HashMap because a lot of functions asks for constant time */
-    private final HashMap<String,String> blobList;
+    private final HashMap<String, String> blobList;
     /** parent reference, first */
     private final String parent;
     /** parent reference, second (For merging) */
@@ -41,10 +41,10 @@ public class Commit implements Serializable {
         this.currTime = new Date(0);
         this.blobList = new HashMap<>();
         this.id = generateID();
-
     }
     /** Constructor for commit with message.*/
-    public Commit(String message,String parent, String secondParent, HashMap<String, String> blobList) {
+    public Commit(String message, String parent,
+                  String secondParent, HashMap<String, String> blobList) {
         this.message = message;
         this.parent = parent;
         this.secondParent = secondParent;
@@ -78,21 +78,23 @@ public class Commit implements Serializable {
     /** read commit from SHA-ID/file name. */
     public static Commit fromFile(String commitID) {
         File commitFile = Utils.join(Repository.COMMIT_DIR, commitID);
-        return Utils.readObject(commitFile,Commit.class);
+        return Utils.readObject(commitFile, Commit.class);
     }
     /** get SHA-1 code for commit with message, time, blobList, parent commits;
      *  sha1 : parameters must be String or byte[] */
     public String generateID() {
-        return Utils.sha1(this.message, generateTime(), this.blobList.toString(), this.parent, this.secondParent);
+        return Utils.sha1(this.message, generateTime(),
+                this.blobList.toString(), this.parent, this.secondParent);
     }
     /** get first 8 characters of SHA-1 code. */
     public String getShort() {
-        return id.substring(0,8);
+        return id.substring(0, 8);
     }
     /** Utils.sha1 only takes String or bytes.
      * So we need to convert curr-Time to String. */
     public String generateTime() {
-        SimpleDateFormat formatter =new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z"); //SDF is locale sensitive.
+        SimpleDateFormat formatter =new SimpleDateFormat(
+                "E MMM dd HH:mm:ss yyyy Z"); //SDF is locale sensitive.
         // formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         String strDate = formatter.format(currTime);
         return strDate;
@@ -110,9 +112,12 @@ public class Commit implements Serializable {
     public String toLog() {
 
         if (secondParent.isEmpty()) {
-            return String.format("=== %ncommit %s %nDate: %s%n%s%n%n",id,generateTime(),message);
+            return String.format(
+                    "=== %ncommit %s %nDate: %s%n%s%n%n", id, generateTime(), message);
         } else {
-            return String.format("=== %ncommit %s %nMerge: %s %s %nDate: %s%n%s%n%n",id,parent.substring(0,8), secondParent.substring(0,8),generateTime(),message);
+            return String.format(
+                    "=== %ncommit %s %nMerge: %s %s %nDate: %s%n%s%n%n", id,
+                    parent.substring(0,8), secondParent.substring(0,8), generateTime(), message);
         }
     }
 

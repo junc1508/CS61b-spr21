@@ -45,7 +45,7 @@ class Utils {
                 } else if (val instanceof String) {
                     md.update(((String) val).getBytes(StandardCharsets.UTF_8));
                 } else {
-                    throw new IllegalArgumentException("improper type to sha1 "+val);
+                    throw new IllegalArgumentException("improper type to sha1 " + val);
                 }
             }
             Formatter result = new Formatter();

@@ -32,10 +32,10 @@ public class Repository {
     public static  File INDEX = join(GITLET_DIR, "index");
 
     public static Staging stagingArea;
-    /** have to define stagingArea as belwo to instantiate Staging; or else all the staging trees will be null and
-    cannot proceed */
+    /** have to define stagingArea as belwo to instantiate Staging;
+     * or else all the staging trees will be null and cannot proceed */
     static {
-        if (INDEX.exists()){
+        if (INDEX.exists()) {
             stagingArea = Staging.fromFile();
         } else {
             stagingArea = new Staging();
@@ -54,11 +54,12 @@ public class Repository {
      * */
     public static void init() {
         if (GITLET_DIR.exists()) {
-            System.out.println("A Gitlet version-control system already exists in the current directory."); //1)
+            System.out.println(
+                    "A Gitlet version-control system already exists in the current directory."); //1)
             System.exit(0);
-        }
-        else {
-            COMMIT_DIR.mkdirs();//2)
+        } else {
+            //2
+            COMMIT_DIR.mkdirs();
             BRANCH_DIR.mkdirs();
             BLOB_DIR.mkdirs();
             try {
@@ -93,7 +94,7 @@ public class Repository {
      * if it is already there (as can happen when a file is changed, added,
      * and then changed back to it’s original version). The file will no longer
      * be staged for removal (see gitlet rm), if it was at the time of the command.*/
-    public static void add (String fileName) {
+    public static void add(String fileName) {
         // check if the file exist.
         File f = Utils.join(CWD, fileName);
         if (f.exists()) {
@@ -116,7 +117,6 @@ public class Repository {
             System.exit(0);
         } else {
             /** clone the parent commit from HEAD and get informations.*/
-
             String parent = getHeadCommit();
             /** new blobs for commit from staging area.*/
             HashMap<String, String> trackedFile = stagingArea.getTracked();
@@ -142,13 +142,13 @@ public class Repository {
         return Utils.readContentsAsString(HEAD);
     }
     /** Update current HEAD commit id. */
-    public static void setHead(String HEADcommitID) {
-        Utils.writeContents(HEAD,HEADcommitID);
+    public static void setHead(String headCommitID) {
+        Utils.writeContents(HEAD, headCommitID);
     }
 
     /** remove from stage or (CWD and tracked). */
     public static void rm(String file) {
-        File f = Utils.join(CWD,file);
+        File f = Utils.join(CWD, file);
         if (f.exists()) {
             stagingArea.rm(f);
             stagingArea.save();
@@ -172,7 +172,7 @@ public class Repository {
             str.append(currCommit.toLog());
             parentID = currCommit.getParent();
         }
-        str.deleteCharAt(str.length()-1);
+        str.deleteCharAt(str.length() - 1);
         System.out.println(str);
     }
     /** print all the commits. */
@@ -183,7 +183,7 @@ public class Repository {
             Commit commit = Commit.fromFile(i);
             globallog.append(commit.toLog());
         }
-        globallog.deleteCharAt(globallog.length()-1);
+        globallog.deleteCharAt(globallog.length() - 1);
         System.out.println(globallog);
     }
 
@@ -194,7 +194,7 @@ public class Repository {
         StringBuilder commitID = new StringBuilder();
         for (String i: allCommits) {
             Commit commit = Commit.fromFile(i);
-            if (commit.getMessage().equals(message)){
+            if (commit.getMessage().equals(message)) {
                 commitID.append(commit.getCommitID() + "\n");
             }
         }
@@ -202,7 +202,7 @@ public class Repository {
             System.out.println("Found no commit with that message.");
             System.exit(0);
         } else {
-            commitID.deleteCharAt(commitID.length()-1);
+            commitID.deleteCharAt(commitID.length() - 1);
             System.out.println(commitID);
         }
     }
@@ -216,18 +216,28 @@ public class Repository {
         String branch = getBranches();
         String add = getStaged();
         String remove = getRemovalList();
-        String modified= getModfied();
+        String modified = getModfied();
         String untracked = getUntracked();
         status.append("=== Branches ===\n");
-        status.append(branch);
+        if (!branch.isEmpty()) {
+            status.append(branch + "\n");
+        }
         status.append("\n=== Staged Files ===\n");
-        status.append(add);
+        if (!add.isEmpty()) {
+            status.append(add + "\n");
+        }
         status.append("\n=== Removed Files ===\n");
-        status.append(remove);
+        if (!remove.isEmpty()) {
+            status.append(remove + "\n");
+        }
         status.append("\n=== Modifications Not Staged For Commit ===\n");
-        status.append(modified);
+        if (!modified.isEmpty()) {
+            status.append(modified + "\n");
+        }
         status.append("\n=== Untracked Files ===\n");
-        status.append(untracked);
+        if (!untracked.isEmpty()) {
+            status.append(untracked + "\n");
+        }
         System.out.println(status);
     }
     /** get all branches. */
@@ -239,7 +249,7 @@ public class Repository {
             if (i.equals(currBranch)) {
                 branches.add(String.format("* %s", i));
             } else {
-                branches.add (String.format("%s", i));
+                branches.add(String.format("%s", i));
             }
         }
         Collections.sort(branches);
@@ -277,10 +287,10 @@ public class Repository {
         /** list of file names in CWD */
         List<String> allFilesCWD = Utils.plainFilenamesIn(CWD);
         ArrayList<String> modified = new ArrayList<>();
-        ArrayList<String> modified_d = new ArrayList<>();
+        ArrayList<String> modifiedD = new ArrayList<>();
         for (String i : allFilesCWD) {
             String aSha = stagingArea.getAdd().get(i);
-            File file = Utils.join(CWD,i);
+            File file = Utils.join(CWD, i);
             String iSha = Utils.sha1(i, Utils.readContents(file));
             if (aSha != null) {  //staged
                 if (!aSha.equals(iSha)) {    //file staged for addition, but modified later 2)
@@ -297,7 +307,7 @@ public class Repository {
         }
         for (String j : stagingArea.getAdd().keySet()) { //staged for addition but deleted in CWD 3)
             if (!allFilesCWD.contains(j)) {
-                modified_d.add(String.format("%s (deleted)", j));
+                modifiedD.add(String.format("%s (deleted)", j));
             }
         }
         //tracked, not added for removal (or addition since it is in 3), deleted in CWD. 4)
@@ -305,10 +315,10 @@ public class Repository {
             String kaSha = stagingArea.getAdd().get(k);
             String krSha = stagingArea.getRemove().get(k);
             if (kaSha == null && krSha == null && !allFilesCWD.contains(k)) {
-                modified_d.add(String.format("%s (deleted)", k));
+                modifiedD.add(String.format("%s (deleted)", k));
             }
         }
-        modified.addAll(modified_d);
+        modified.addAll(modifiedD);
         Collections.sort(modified);
         String sortedModified = String.join("\n", modified);
         return sortedModified;
@@ -322,7 +332,8 @@ public class Repository {
             //staged files
             String aSha = stagingArea.getAdd().get(i);
             String tSha = stagingArea.getTracked().get(i);
-            if (aSha == null && tSha == null) { //includes those in toRemove and deleted but added back.
+            //includes those in toRemove and deleted but added back.
+            if (aSha == null && tSha == null) {
                 untracked.add(i);
             }
         }
@@ -331,20 +342,19 @@ public class Repository {
         return sortedUntracked;
     }
 
-
-    /** checkout -- [file name]
-     * Takes the version of the file as it exists in the head commit and puts it in the working directory,
+    /** checkout -- [file name] Takes the version of the file as it exists
+     * in the head commit and puts it in the working directory,
      * overwriting the version of the file that’s already there if there is one.
      * The new version of the file is not staged. */
     public static void checkout(String fileName) {
         /** find the corresponding file in the head commit. */
         String headCommitID = getHeadCommit();
-        checkout(headCommitID,fileName);
+        checkout(headCommitID, fileName);
     }
     /** return blob content from saved Blob file. */
     public static String getContentFromSavedBlob(String blobID) {
         File blobFile = Utils.join(BLOB_DIR, blobID);
-        Blob blob = Utils.readObject(blobFile,Blob.class);
+        Blob blob = Utils.readObject(blobFile, Blob.class);
         byte[] content = blob.getContent();
         String str = new String(content, StandardCharsets.UTF_8);
         return str;
@@ -356,13 +366,13 @@ public class Repository {
      * The new version of the file is not staged.*/
     public static void checkout(String commit, String file) {
         File f = Utils.join(COMMIT_DIR,commit);
-        if (f.exists()){
+        if (f.exists()) {
             Commit newCommit = Utils.readObject(f, Commit.class);
-            String blobID =newCommit.getBlobList().get(file);
+            String blobID = newCommit.getBlobList().get(file);
             if (blobID != null) {
-                String str =getContentFromSavedBlob(blobID);
-                File newVersion = Utils.join(CWD,file);
-                Utils.writeContents(newVersion,str); //overwrite the version of file
+                String str = getContentFromSavedBlob(blobID);
+                File newVersion = Utils.join(CWD, file);
+                Utils.writeContents(newVersion, str); //overwrite the version of file
             } else {
                 System.out.println("File does not exist in that commit.");
                 System.exit(0);
@@ -377,40 +387,45 @@ public class Repository {
      * Takes all files in the commit at the head of the given branch,
      * and puts them in the working directory, overwriting the versions of the files
      * that are already there if they exist.
-     * Also, at the end of this command, the given branch will now be considered the current branch (HEAD).
-     * Any files that are tracked in the current branch but are not present in the checked-out branch are deleted.
+     * Also, at the end of this command, the given branch will now be
+     * considered the current branch (HEAD).
+     * Any files that are tracked in the current branch but are not present
+     * in the checked-out branch are deleted.
      * The staging area is cleared, unless the checked-out branch is the current branch*/
-    public static void checkout_branch (String branchName) {
-        File branchFile = Utils.join(BRANCH_DIR,branchName);
-        if (branchFile.exists()){ //if the branch exist
+    public static void checkoutBranch(String branchName) {
+        File branchFile = Utils.join(BRANCH_DIR, branchName);
+        if (branchFile.exists()) { //if the branch exist
             String curBranchName = Utils.readContentsAsString(CURBRANCH);
             if (curBranchName.equals(branchName)) {
                 System.out.println("No need to checkout the current branch.");
                 System.exit(0);
-            } else if (!getUntracked().isEmpty()) {  //there is untracked/uncommited changes in current commit
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                //there is untracked/uncommited changes in current commit
+            } else if (!getUntracked().isEmpty()) {
+                System.out.println(
+                        "There is an untracked file in the way; delete it, or add and commit it first.");
             } else {
-                Branch checkBranch =Utils.readObject(branchFile,Branch.class);
+                Branch checkBranch = Utils.readObject(branchFile,Branch.class);
                 String checkCommitID = checkBranch.getHEAD();
-                File checkCommitFile = Utils.join(COMMIT_DIR,checkCommitID);
-                Commit checkCommit = Utils.readObject(checkCommitFile,Commit.class);
+                File checkCommitFile = Utils.join(COMMIT_DIR, checkCommitID);
+                Commit checkCommit = Utils.readObject(checkCommitFile, Commit.class);
                 /**copy all the files from check commit to CWD, overwrite existing files. */
                 copyFilesFromCommit(checkCommit);
                 /**delete files that are in current commit but absent in check commit. */
                 deleteExtraFile(checkCommit);
                 stagingArea.clear();
-                stagingArea.setTracked(checkCommit.getBlobList()); //set tracked files to original files.
+                //set tracked files to original files.
+                stagingArea.setTracked(checkCommit.getBlobList());
                 checkBranch.saveBranch();   //update checkBranch.
                 checkBranch.saveCurBranchName(); //update current branch to checkBranch.
                 checkBranch.saveHEAD(); //update current commit to check commit.
             }
         } else {
             System.out.println("No such branch exists.");
-            System.exit(0);//wrong branch name
+            System.exit(0);  //wrong branch name
         }
     }
     /**copy all the files from check commit to CWD, overwrite existing files. */
-    public static void copyFilesFromCommit (Commit checkCommit) {
+    public static void copyFilesFromCommit(Commit checkCommit) {
         for (String i : checkCommit.getBlobList().keySet()) {
             File file = Utils.join(CWD, i);
             String blobID = checkCommit.getBlobList().get(i);
@@ -423,7 +438,7 @@ public class Repository {
         for (String i : stagingArea.getTracked().keySet()) {
             String ifCheck = commit1.getBlobList().get(i); //if the file is tracked in check commit1
             if (ifCheck == null) {
-                File file = Utils.join(CWD,i);
+                File file = Utils.join(CWD, i);
                 if (file.exists()) {
                     file.delete();
                 }
@@ -437,7 +452,7 @@ public class Repository {
             System.exit(0);
         } else {
             String headCommitID = getHeadCommit(); //current head commit
-            Branch branch = new Branch(headCommitID,branchName);
+            Branch branch = new Branch(headCommitID, branchName);
             branch.saveBranch();
             //don't need to save head commit as the current head commit does not change.
             //don't change the current branch name until checkout branchName.
@@ -451,7 +466,7 @@ public class Repository {
             System.out.println("Cannot remove the current branch.");
             System.exit(0);
         } else {
-            File branchToRemove = Utils.join(BRANCH_DIR,branchName);
+            File branchToRemove = Utils.join(BRANCH_DIR, branchName);
             if (branchToRemove.exists()) {
                 branchToRemove.delete();
             } else {
@@ -473,12 +488,14 @@ public class Repository {
         if (!allCommits.contains(commitID)) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
-        } else if (!getUntracked().isEmpty()) {  //there is untracked/uncommited changes in current commit
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            //there is untracked/uncommited changes in current commit
+        } else if (!getUntracked().isEmpty()) {
+            System.out.println(
+                    "There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         } else {
-            File resetCommitFile = Utils.join(COMMIT_DIR,commitID);
-            Commit resetCommit = Utils.readObject(resetCommitFile,Commit.class);
+            File resetCommitFile = Utils.join(COMMIT_DIR, commitID);
+            Commit resetCommit = Utils.readObject(resetCommitFile, Commit.class);
             /** copy all the files from check commit to CWD, overwrite existing files. */
             copyFilesFromCommit(resetCommit);
             /** delete files that are in current commit but absent in check commit. */
