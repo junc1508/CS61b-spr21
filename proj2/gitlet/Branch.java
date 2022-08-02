@@ -4,6 +4,8 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 
+import static gitlet.Repository.CURBRANCH;
+
 public class Branch implements Serializable {
     /** current branch name. */
     private String branchName;
@@ -31,6 +33,7 @@ public class Branch implements Serializable {
         File branchFile = Utils.join(Repository.BRANCH_DIR, branchName);
         Utils.writeObject(branchFile, this);
     }
+
     /** Read branch file.
     public static Branch fromFile(File f) {
         return Utils.readObject(f, Branch.class);
@@ -43,8 +46,13 @@ public class Branch implements Serializable {
 
     /** Save current branch name. */
     public void saveCurBranchName() {
-        File curBranch = Utils.join(Repository.CURBRANCH);
+        File curBranch = Utils.join(CURBRANCH);
         Utils.writeContents(curBranch, branchName);
+    }
+    /** Read branch file. */
+    public static Branch fromFile(String branchName){
+        File f = Utils.join(Repository.BRANCH_DIR, branchName);
+        return Utils.readObject(f, Branch.class);
     }
 
 

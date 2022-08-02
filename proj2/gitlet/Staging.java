@@ -42,7 +42,6 @@ public class Staging implements Serializable {
         String fileName = file.getName();
         String blobID = fileToBlob.generateBlobID();
         String prevID = tracked.get(fileName);
-
         /** if tracked is null or filename is not in previous commit,
          * the file is not previously tracked/no current working version,
          * so should be added for commit;
@@ -55,11 +54,8 @@ public class Staging implements Serializable {
         /** if it is tracked, compare if the blobID is the same with equals
          * not ==. if it is the same as current working version,
          * remove from fileToAdd and fileToRemove; do not save. */
-            rm(file);
-            String removeID = fileToRemove.get(fileName);
-            if (removeID != null) {
-                fileToRemove.remove(fileName);
-            }
+            fileToAdd.remove(fileName);
+            fileToRemove.remove(fileName);
             /** if it is tracked but does not change back,
              * update the latest version and save the fileToBlob. */
         } else {
@@ -76,7 +72,7 @@ public class Staging implements Serializable {
         String fileName = file.getName();
         String staged = fileToAdd.get(fileName);
         String prevID = tracked.get(fileName);
-        /** 1) staged */
+        /** 1) staged for addition */
         if (staged != null) {
             fileToAdd.remove(fileName);
             /** 2) tracked */
@@ -89,9 +85,11 @@ public class Staging implements Serializable {
         }
     }
 
-    /** track file. for commit() */
+    /** track file. from Commit.bloblist, helps with commit(),
+     * checkout(branch), reset(commit) */
     public void setTracked(HashMap<String, String> map) {
-        tracked = map;
+        tracked.clear();
+        tracked.putAll(map);
     }
     /** clear the staging area after commit */
     public void clear() {
@@ -109,13 +107,13 @@ public class Staging implements Serializable {
     public HashMap<String, String> getTracked() {
         HashMap<String, String> newBlobs = new HashMap<>();
         newBlobs.putAll(tracked);
-        if (fileToAdd != null) {
+        if (!fileToAdd.isEmpty()) {
             newBlobs.putAll(fileToAdd);
         }
-        if (fileToRemove != null) {
+        if (!fileToRemove.isEmpty()) {
             for (String i : fileToRemove.keySet()) {
-                if (tracked.containsKey(i)) {
-                    tracked.remove(i);
+                if (newBlobs.containsKey(i)) {
+                    newBlobs.remove(i);
                 }
             }
         }
