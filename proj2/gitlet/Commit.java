@@ -93,7 +93,7 @@ public class Commit implements Serializable {
     /** Utils.sha1 only takes String or bytes.
      * So we need to convert curr-Time to String. */
     public String generateTime() {
-        SimpleDateFormat formatter =new SimpleDateFormat(
+        SimpleDateFormat formatter =new SimpleDateFormat (
                 "E MMM dd HH:mm:ss yyyy Z"); //SDF is locale sensitive.
         // formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         String strDate = formatter.format(currTime);
@@ -117,7 +117,7 @@ public class Commit implements Serializable {
         } else {
             return String.format(
                     "=== %ncommit %s %nMerge: %s %s %nDate: %s%n%s%n%n", id,
-                    parent.substring(0,8), secondParent.substring(0,8), generateTime(), message);
+                    parent.substring(0, 8), secondParent.substring(0, 8), generateTime(), message);
         }
     }
 

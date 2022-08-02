@@ -1,5 +1,6 @@
 package gitlet;
 
+import java.awt.*;
 import java.io.File;
 
 import static gitlet.Repository.*;
@@ -14,8 +15,14 @@ public class Main {
      */
     public static void main(String[] args) {
         // TODO: what if args is empty?
+        if (args.length == 0) {
+            Utils.message("Please enter a command.");
+        }
         String firstArg = args[0];
         switch(firstArg) {
+            default:
+                Utils.message("No command with that name exists.");
+                break;
             case "init":
                 // TODO: handle the `init` command
                 init();
@@ -27,7 +34,7 @@ public class Main {
                     addFileName = args[1];
                     add(addFileName);
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("missing filename for add");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
 
@@ -38,7 +45,7 @@ public class Main {
                     rmFileName = args[1];
                     rm(rmFileName);
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("missing filename for rm");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
 
@@ -71,7 +78,7 @@ public class Main {
                     findMessage = args[1];
                     find(findMessage);
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("Please enter a commit message to find.");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
 
@@ -86,7 +93,7 @@ public class Main {
                     newBranchName= args[1];
                     branch(newBranchName);
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("Please enter a branch name");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
 
@@ -98,7 +105,7 @@ public class Main {
                     rmBranch(branchNameToRemove);
 
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("Please enter a branch name to remove");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
 
@@ -108,21 +115,27 @@ public class Main {
                     resetCommit = args[1];
                     reset(resetCommit);
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-                    Utils.message("Please enter commit ID for reset.");
+                    Utils.message("Incorrect operands.");
                 }
                 break;
-
-            // TODO: FILL THE REST IN
             /**have to put this at last, if put branch() after this,
              *  case 3 and 4 will run branch() and create branch -- and branch commitID for some reason.*/
             case "checkout":
                 switch(args.length) {
                     case 3: //checkout -- [file name]
+                        if (!args[1].equals("--")) {
+                            Utils.message("Incorrect operands.");
+                            System.exit(0);
+                        }
                         String checkoutCurrentFile = args[2];
                         Repository.checkout(checkoutCurrentFile);
                         break;
 
                     case 4: //checkout [commit id] -- [file name]
+                        if (!args[2].equals("--")) {
+                            Utils.message("Incorrect operands.");
+                            System.exit(0);
+                        }
                         String checkoutCommit = args[1];
                         String checkoutCommitFile = args[3];
                         Repository.checkout(checkoutCommit, checkoutCommitFile);
@@ -132,8 +145,11 @@ public class Main {
                         String branchName = args[1];
                         Repository.checkoutBranch(branchName);
                         break;
-                }
+                    default:
+                        Utils.message("Incorrect operands.");
+                        break;
 
+                }
 
             // TODO: FILL THE REST IN
             // TODO: FILL THE REST IN

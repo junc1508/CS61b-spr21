@@ -27,7 +27,7 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     public static final File COMMIT_DIR = join(GITLET_DIR, ".commit");
     public static final File BRANCH_DIR = join(GITLET_DIR, ".branch");
-    public static final File BLOB_DIR = join(GITLET_DIR,"blob");
+    public static final File BLOB_DIR = join(GITLET_DIR, "blob");
     /** filepath for staging. */
     public static  File INDEX = join(GITLET_DIR, "index");
 
@@ -84,6 +84,14 @@ public class Repository {
         }
     }
 
+    /** check if .gitlet folder exists => initialized */
+    public static void checkGitletDir() {
+        if (!GITLET_DIR.exists()) {
+            Utils.message("Not in an initialized Gitlet directory.");
+            System.exit(0);
+        }
+    }
+
     /** Description: 1) Adds a copy of the file to the staging area,
      * The staging area should be somewhere in .gitlet.
      * 2) Staging an already-staged file overwrites the previous entry
@@ -97,6 +105,7 @@ public class Repository {
     public static void add(String fileName) {
         // check if the file exist.
         File f = Utils.join(CWD, fileName);
+        checkGitletDir();
         if (f.exists()) {
             stagingArea.add(f);
             stagingArea.save();
@@ -112,6 +121,7 @@ public class Repository {
      * 4) clear stage; set new tracked
      * */
     public static void commit(String message) {
+        checkGitletDir();
         if (stagingArea.getAdd().isEmpty() && stagingArea.getRemove().isEmpty()) {
             Utils.message("No changes added to the commit.");
             System.exit(0);
@@ -162,6 +172,7 @@ public class Repository {
      * linear time, use stringBuilder - fastest way to concatenate strings.
      * */
     public static void log() {
+        checkGitletDir();
         StringBuilder str = new StringBuilder();
         String currCommitID = getHeadCommit();
         Commit currCommit = Commit.fromFile(currCommitID);
@@ -177,6 +188,7 @@ public class Repository {
     }
     /** print all the commits. */
     public static void globallog() {
+        checkGitletDir();
         List<String> allCommits = Utils.plainFilenamesIn(COMMIT_DIR);
         StringBuilder globallog = new StringBuilder();
         for (String i : allCommits) {
@@ -190,6 +202,7 @@ public class Repository {
     /**Prints out the ids of all commits that have the given commit message.
      * If there are multiple such commits, it prints the ids out on separate lines. */
     public static void find(String message) {
+        checkGitletDir();
         List<String> allCommits = Utils.plainFilenamesIn(COMMIT_DIR);
         StringBuilder commitID = new StringBuilder();
         for (String i: allCommits) {
@@ -211,6 +224,7 @@ public class Repository {
      * Also displays what files have been staged for addition or removal.
      * better to make it call several smaller methods */
     public static void status() {
+        checkGitletDir();
         //branches
         StringBuilder status = new StringBuilder();
         String branch = getBranches();
@@ -247,7 +261,7 @@ public class Repository {
         String currBranch = Utils.readContentsAsString(CURBRANCH);
         for (String i : allBranch) {
             if (i.equals(currBranch)) {
-                branches.add(String.format("* %s", i));
+                branches.add(String.format("*%s", i));
             } else {
                 branches.add(String.format("%s", i));
             }
@@ -365,7 +379,8 @@ public class Repository {
      * overwriting the version of the file that’s already there if there is one.
      * The new version of the file is not staged.*/
     public static void checkout(String commit, String file) {
-        File f = Utils.join(COMMIT_DIR,commit);
+        checkGitletDir();
+        File f = Utils.join(COMMIT_DIR, commit);
         if (f.exists()) {
             Commit newCommit = Utils.readObject(f, Commit.class);
             String blobID = newCommit.getBlobList().get(file);
@@ -383,7 +398,7 @@ public class Repository {
         }
 
     }
-    /** checkout
+    /** checkout branch
      * Takes all files in the commit at the head of the given branch,
      * and puts them in the working directory, overwriting the versions of the files
      * that are already there if they exist.
@@ -393,6 +408,7 @@ public class Repository {
      * in the checked-out branch are deleted.
      * The staging area is cleared, unless the checked-out branch is the current branch*/
     public static void checkoutBranch(String branchName) {
+        checkGitletDir();
         File branchFile = Utils.join(BRANCH_DIR, branchName);
         if (branchFile.exists()) { //if the branch exist
             String curBranchName = Utils.readContentsAsString(CURBRANCH);
@@ -404,7 +420,7 @@ public class Repository {
                 System.out.println(
                         "There is an untracked file in the way; delete it, or add and commit it first.");
             } else {
-                Branch checkBranch = Utils.readObject(branchFile,Branch.class);
+                Branch checkBranch = Utils.readObject(branchFile, Branch.class);
                 String checkCommitID = checkBranch.getHEAD();
                 File checkCommitFile = Utils.join(COMMIT_DIR, checkCommitID);
                 Commit checkCommit = Utils.readObject(checkCommitFile, Commit.class);
@@ -446,6 +462,7 @@ public class Repository {
         }
     }
     public static void branch(String branchName) {
+        checkGitletDir();
         File f = Utils.join(BRANCH_DIR, branchName);
         if (f.exists()) {
             System.out.println("A branch with that name already exists.");
@@ -461,6 +478,7 @@ public class Repository {
     /** remove branch with the given name - remove branch file only.
      * Keep all the commits and blobs unchanged.*/
     public static void rmBranch(String branchName) {
+        checkGitletDir();
         String currBranch = readContentsAsString(CURBRANCH);
         if (currBranch.equals(branchName)) {
             System.out.println("Cannot remove the current branch.");
@@ -484,6 +502,7 @@ public class Repository {
      * The command is essentially checkout of an arbitrary commit that
      * also changes the current branch head.*/
     public static void reset(String commitID) {
+        checkGitletDir();
         List<String> allCommits = Utils.plainFilenamesIn(COMMIT_DIR);
         if (!allCommits.contains(commitID)) {
             System.out.println("No commit with that id exists.");
