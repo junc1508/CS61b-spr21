@@ -78,7 +78,11 @@ public class Commit implements Serializable {
     /** read commit from SHA-ID/file name. */
     public static Commit fromFile(String commitID) {
         File commitFile = Utils.join(Repository.COMMIT_DIR, commitID);
-        return Utils.readObject(commitFile, Commit.class);
+        if (commitFile.exists()){
+            return Utils.readObject(commitFile, Commit.class);
+        } else {
+            return null;
+        }
     }
     /** get SHA-1 code for commit with message, time, blobList, parent commits;
      *  sha1 : parameters must be String or byte[] */
@@ -93,7 +97,7 @@ public class Commit implements Serializable {
     /** Utils.sha1 only takes String or bytes.
      * So we need to convert curr-Time to String. */
     public String generateTime() {
-        SimpleDateFormat formatter =new SimpleDateFormat (
+        SimpleDateFormat formatter = new SimpleDateFormat(
                 "E MMM dd HH:mm:ss yyyy Z"); //SDF is locale sensitive.
         // formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
         String strDate = formatter.format(currTime);
@@ -115,9 +119,11 @@ public class Commit implements Serializable {
             return String.format(
                     "=== %ncommit %s %nDate: %s%n%s%n%n", id, generateTime(), message);
         } else {
+            /** “Merge:” consist of the first seven digits of the first
+             * and second parents’ commit ids, in that order. */
             return String.format(
                     "=== %ncommit %s %nMerge: %s %s %nDate: %s%n%s%n%n", id,
-                    parent.substring(0, 8), secondParent.substring(0, 8), generateTime(), message);
+                    parent.substring(0, 7), secondParent.substring(0, 7), generateTime(), message);
         }
     }
 

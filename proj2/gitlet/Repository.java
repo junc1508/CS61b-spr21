@@ -3,10 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import static gitlet.Utils.*;
 
@@ -46,6 +43,10 @@ public class Repository {
     /** Current branch name. */
     public static File CURBRANCH = join(GITLET_DIR, "CURBRANCH");
 
+    /** return current branch name */
+    public static String getCurrBranchName() {
+        return Utils.readContentsAsString(CURBRANCH);
+    }
     /** init command
      * 1) check if .Gitlet directory already exists
      * 2) if not, creates .Gitlet directory
@@ -80,7 +81,6 @@ public class Repository {
             master.saveCurBranchName();
             stagingArea = new Staging();
             stagingArea.save();
-
         }
     }
 
@@ -120,7 +120,7 @@ public class Repository {
      * 3) master and head pointer.
      * 4) clear stage; set new tracked
      * */
-    public static void commit(String message) {
+    public static void commit(String mergeCommit, String message) {
         checkGitletDir();
         if (stagingArea.getAdd().isEmpty() && stagingArea.getRemove().isEmpty()) {
             Utils.message("No changes added to the commit.");
@@ -132,7 +132,7 @@ public class Repository {
             HashMap<String, String> trackedFile = stagingArea.getTracked();
 
             /** create and save commit, the instruction clone the old commit */
-            Commit newCommit = new Commit(message, parent, "", trackedFile);
+            Commit newCommit = new Commit(message, parent, mergeCommit, trackedFile);
             newCommit.saveCommit();
             /** clear staging area and set the tracked file. */
             stagingArea.clear();
@@ -146,9 +146,10 @@ public class Repository {
 
     /** update current branch with new commit.
      * Save Branch file and HEAD commit */
-    public static void updateBranch(String commitID){
-        String currBranchName = Utils.readContentsAsString(CURBRANCH);
-        Branch currBranch = new Branch(commitID, currBranchName);
+    public static void updateBranch(String commitID) {
+        String currBranchName = getCurrBranchName();
+        Branch currBranch = Branch.fromFile(currBranchName);
+        currBranch.updateBranch(commitID);
         currBranch.saveBranch();
         currBranch.saveHEAD();
     }
@@ -164,17 +165,11 @@ public class Repository {
     }
 
     /** remove from stage or (CWD and tracked). */
-    public static void rm(String file) {
-        File f = Utils.join(CWD, file);
-        if (f.exists()) {
-            stagingArea.rm(f);
-            stagingArea.save();
-        } else {
-            System.out.println("File for rm does not exist.");
-            System.exit(0);
-        }
+    public static void rm(String fileName) {
+        stagingArea.rm(fileName);
+        stagingArea.save();
     }
-    /** print current branch information.
+    /** print current branch information from current commit.
      * Find the current commit (HEAD),recursive calls till first commit.
      * linear time, use stringBuilder - fastest way to concatenate strings.
      * */
@@ -265,7 +260,7 @@ public class Repository {
     public static String getBranches() {
         List<String> allBranch = Utils.plainFilenamesIn(BRANCH_DIR);
         ArrayList<String> branches = new ArrayList<>();
-        String currBranch = Utils.readContentsAsString(CURBRANCH);
+        String currBranch = getCurrBranchName();
         for (String i : allBranch) {
             if (i.equals(currBranch)) {
                 branches.add(String.format("*%s", i));
@@ -366,7 +361,7 @@ public class Repository {
                 //therefore, if a file is removed then added back
                 //it is not in getTracked.
                 String tSha = stagingArea.getTracked().get(i);
-                if (tSha == null){
+                if (tSha == null) {
                     untracked.add(i);
                 }
             }
@@ -390,7 +385,7 @@ public class Repository {
         HashMap<String, String> prevTrack = commit.getBlobList();
         for (String i : allFilesCWD) {
             String pSha = prevTrack.get(i);
-            if (pSha != null ) {
+            if (pSha != null) {
                 Commit currCommit = Commit.fromFile(getHeadCommitID());
                 String tSha = currCommit.getBlobList().get(i);
                 /** the filename not currently tracked */
@@ -434,24 +429,50 @@ public class Repository {
      * The new version of the file is not staged.*/
     public static void checkout(String commitName, String file) {
         checkGitletDir();
-        List<String> allCommits = plainFilenamesIn(COMMIT_DIR);
-        if (allCommits.contains(commitName)) {
-            Commit newCommit = Commit.fromFile(commitName);
-            String blobID = newCommit.getBlobList().get(file);
+        String commitID = commitName;
+        if (commitName.length() == 6) {
+            commitID = getCommitFromShortID(commitName);
+        }
+        if (commitID == null){
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+        Commit commit = Commit.fromFile(commitID);
+        if (commit == null){
+            //wrong commit id.
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        } else {
+            String blobID = commit.getBlobList().get(file);
             if (blobID != null) {
-                String str = getContentFromSavedBlob(blobID);
-                File newVersion = Utils.join(CWD, file);
-                Utils.writeContents(newVersion, str); //overwrite the version of file
+                saveNewContent(file, blobID);
             } else {
                 System.out.println("File does not exist in that commit.");
                 System.exit(0);
             }
-        } else { //wrong commit id.
-            System.out.println("No commit with that id exists.");
-            System.exit(0);
         }
-
     }
+    /** save new content from blobID to CWD file with the same file name. */
+    public static void saveNewContent(String fileName, String blobID) {
+        String str = getContentFromSavedBlob(blobID);
+        File newVersion = Utils.join(CWD, fileName);
+        Utils.writeContents(newVersion, str); //overwrite the version of file
+    }
+
+    /** get original SHA-1 ID from short commit ID - first 6 characters of SHA-1.
+     * Git save time by storing commit in commit - first 2 char - last 38 char
+     */
+    public static String getCommitFromShortID(String shortID) {
+        List<String> allCommits = plainFilenamesIn(COMMIT_DIR);
+        for (String i : allCommits) {
+            String shortCommit = i.substring(0, 6);
+            if (shortCommit.equals(shortID)){
+                return i;
+            }
+        }
+        return null;
+    }
+
     /** checkout branch
      * Takes all files in the commit at the head of the given branch,
      * and puts them in the working directory, overwriting the versions of the files
@@ -465,7 +486,7 @@ public class Repository {
         checkGitletDir();
         List<String> branchList = plainFilenamesIn(BRANCH_DIR);
         if (branchList.contains(branchName)) { //if the branch exist
-            String curBranchName = Utils.readContentsAsString(CURBRANCH);
+            String curBranchName = getCurrBranchName();
             if (curBranchName.equals(branchName)) {
                 System.out.println("No need to checkout the current branch.");
                 System.exit(0);
@@ -489,7 +510,7 @@ public class Repository {
                     stagingArea.save();
                     checkBranch.saveBranch();   //update checkBranch.
                     checkBranch.saveCurBranchName(); //update current branch to checkBranch.
-                    checkBranch.saveHEAD(); //update current commit to check commit.
+                    checkBranch.saveHEAD(); //update current HEAD commit to check commit.
                 }
             }
         } else {
@@ -528,7 +549,7 @@ public class Repository {
             String headCommitID = getHeadCommitID(); //current head commit
             Branch branch = new Branch(headCommitID, branchName);
             branch.saveBranch();
-            //don't need to save head commit as the current head commit does not change.
+            //don't need to save head commit as current head commit does not change.
             //don't change the current branch name until checkout branchName.
         }
     }
@@ -558,23 +579,33 @@ public class Repository {
      * The staging area is cleared.
      * The command is essentially checkout of an arbitrary commit that
      * also changes the current branch head.*/
-    public static void reset(String commitID) {
+    public static void reset(String commitName) {
         checkGitletDir();
-        List<String> allCommits = Utils.plainFilenamesIn(COMMIT_DIR);
-        if (!allCommits.contains(commitID)) {
+        String commitID = commitName;
+        if (commitName.length() == 6) {
+            commitID = getCommitFromShortID(commitName);
+        }
+        if (commitID == null) {
             System.out.println("No commit with that id exists.");
-            //there is untracked/uncommited changes in current commit
+            System.exit(0);
+        }
+        Commit resetCommit = Commit.fromFile(commitID);
+        if (resetCommit == null) {
+            System.out.println("No commit with that id exists.");
         } else {
+            //there is untracked/uncommited changes in current commit
             if (hasUntracked(commitID)){
-                System.out.println(
-                        "There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; " +
+                        "delete it, or add and commit it first.");
             } else {
-                Commit resetCommit = Commit.fromFile(commitID);
-                /** update the branch head with new commit. Save the new branch and the HEAD commit */
+                /** update the branch head with new commit.
+                 * Save the new branch and the HEAD commit */
                 updateBranch(commitID);
-                /** delete files that are in current commit but absent in check commit. */
+                /** delete files that are in current commit
+                 * but absent in check commit. */
                 deleteExtraFile(resetCommit);
-                /** copy all the files from check commit to CWD, overwrite existing files. */
+                /** copy all the files from check commit to CWD,
+                 * overwrite existing files. */
                 copyFilesFromCommit(resetCommit);
                 /** clear staging area. */
                 stagingArea.clear();
@@ -582,7 +613,156 @@ public class Repository {
                 stagingArea.setTracked(resetCommit.getBlobList());
                 stagingArea.save();
             }
-
         }
     }
+
+    /** Merges files from the given branch HEAD into the current branch HEAD.
+     * Need to update staging area and CWD.
+     * Return boolean value, true if there is a conflict.
+     * For split point:
+     * 1) If the split point is the same commit as the given branch head commit,
+     *      the merge is complete, print message.
+     * 2) If the split point is the current branch head commit,
+     *   check out the given branch, and the operation ends after message 2 */
+    public static boolean merge(String branchName) {
+        /** Failure cases: 1) If there are staged additions or removals present */
+        if (!stagingArea.getAdd().isEmpty() || !stagingArea.getRemove().isEmpty()) {
+            Utils.error("You have uncommitted changes.");
+        }
+        /** Failure cases: 2) If a branch with the given name does not exist. */
+        File mergeBranchFile = Utils.join(BRANCH_DIR, branchName);
+        if (!mergeBranchFile.exists()){
+            Utils.error("A branch with that name does not exist.");
+        }
+        /** Failure cases: 3) If attempting to merge a branch with itself. */
+        String currentBranchName = getCurrBranchName();
+        if (currentBranchName.equals(branchName)) {
+            Utils.error("Cannot merge a branch with itself.");
+        }
+        /**  Failure cases: 4) If an untracked file in the current commit
+         * would be overwritten or deleted by the merge */
+        if (!getUntracked().isEmpty()) {
+            Utils.error("There is an untracked file in the way; " +
+                    "delete it, or add and commit it first.");
+        }
+        /** check split point. */
+        String splitPoint = findSplitPoint(branchName);
+        /** flag for conflict. */
+        boolean conflict = false;
+        if (splitPoint == "given") {
+            System.out.println("Given branch is an ancestor of the current branch.");
+            System.exit(0);
+        } else if (splitPoint == "current") {
+            checkoutBranch(branchName);
+            System.out.println("Current branch fast-forwarded.");
+            System.exit(0);
+        }
+        /** find the head commit of current and given branch. */
+        String currCommitID = getHeadCommitID();
+        Commit currCommit = Commit.fromFile(currCommitID);
+        Branch mergeBranch = Branch.fromFile(branchName);
+        String mergeCommitID = mergeBranch.getHEAD();
+        Commit mergeCommit = Commit.fromFile(mergeCommitID);
+        Commit splitCommit = Commit.fromFile(splitPoint);
+
+        /** collect all the files in all 3 commits. */
+        HashSet<String> allFiles = new HashSet<>();
+        allFiles.addAll(currCommit.getBlobList().keySet());
+        allFiles.addAll(mergeCommit.getBlobList().keySet());
+        allFiles.addAll(splitCommit.getBlobList().keySet());
+        /** change the content of file in CWD in 3 ways,
+         update to merge; delete; update to conflict;
+         * update in staging area */
+        for (String key : allFiles) {
+            /** Key is the file name,
+             * get corresponding blob ID from each commit */
+            String inSplit = splitCommit.getBlobList().get(key);
+            String inCurr = currCommit.getBlobList().get(key);
+            String inMerge = mergeCommit.getBlobList().get(key);
+            /** split - present; Current - present;
+             * Compare with merge */
+            if (inSplit != null && inCurr != null) {
+                /** deleted in merge, rm from staging Area
+                 * and CWD. */
+                if (inMerge == null) {
+                    rm(key);
+                /** curr is different from merge. */
+                } else if (!inCurr.equals(inMerge)) {
+                    if (inCurr.equals(inSplit)) {
+        /** curr == split, update CWD file to merge, and add to stage.*/
+                        saveNewContent(key, inMerge);
+                        add(key);
+        /** curr != merge != split; create conflict. */
+                    } else if (!inCurr.equals(inSplit)
+                            && !inMerge.equals(inSplit)) {
+                        mergeConflict(inCurr, inMerge, key);
+                        conflict = true;
+                    }
+                }
+        /** split - absent; Curr - present */
+            } else if (inSplit == null && inCurr != null) {
+                /** branch absent - remove file. */
+                if (inMerge == null) {
+                    rm(key);
+                    /** curr != merge, conflict. */
+                } else if (!inCurr.equals(inMerge)){
+                    mergeConflict(inCurr, inMerge, key);
+                    conflict = true;
+                }
+            }
+        }
+        String message = String.format("Merged %s into %s.", branchName, currentBranchName);
+        commit(mergeCommitID, message);
+        return conflict;
+    }
+
+    /** find the split point/latest common ancestor of current branch
+     * and given branch for merge function.
+     *
+     *  3) carry on with merge */
+    public static String findSplitPoint(String branchName){
+        String currBranchName = getCurrBranchName();
+        Branch currBranch = Branch.fromFile(currBranchName);
+        Branch givenBranch = Branch.fromFile(branchName);
+        ArrayList<String> currBranchList = currBranch.getCommitList();
+        ArrayList<String> givenBranchList = givenBranch.getCommitList();
+        String splitPoint = "";
+        int givenSize = givenBranchList.size();
+        int currSize = currBranchList.size();
+        int index = 0;
+        while (index < givenSize && index < currSize &&
+                currBranchList.get(index).equals(givenBranchList.get(index))) {
+            splitPoint = currBranchList.get(index);
+            index++;
+            }
+        /** 1) same as given branch head commit. */
+        if (index == givenSize) {     //in the last step index ++
+            return "given";
+        } else if (index == currSize) {
+            checkoutBranch(branchName);
+            return "current";
+        } else {
+            return splitPoint;
+        }
+    }
+
+    /** update the content of CWD file with conflict from merge.
+     * generate new blob
+     * stage for addition */
+    public static void mergeConflict(
+            String CurrlobID, String mergeBlobID, String fileName) {
+        //write content
+        String currContent = getContentFromSavedBlob(CurrlobID);
+        String mergeContent = getContentFromSavedBlob(mergeBlobID);
+        File newVersion = Utils.join(CWD, fileName);
+        Utils.writeContents(newVersion, String.format(
+                "<<<<<<< HEAD%n%s=======%n%s>>>>>>>%n",
+                currContent, mergeContent));
+        //save blob
+        Blob blob = new Blob(newVersion);
+        blob.save();
+        /** update staging area. */
+        add(fileName);
+    }
+
 }

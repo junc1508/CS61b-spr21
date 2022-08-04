@@ -58,7 +58,7 @@ public class Main {
                     if (message.isEmpty()) {
                         Utils.message("Please enter a commit message.");
                     } else {
-                        commit(message);
+                        commit("", message);
                     }
                 } catch (java.lang.ArrayIndexOutOfBoundsException e) {
                     Utils.message("Please enter a commit message.");
@@ -119,6 +119,21 @@ public class Main {
                     Utils.message("Incorrect operands.");
                 }
                 break;
+
+            case "merge":
+                String mergeBranch;
+                try {
+                    mergeBranch = args[1];
+                    boolean conflict = merge(mergeBranch);
+                    if (conflict) {
+                        System.out.println("Encountered a merge conflict.");
+                    }
+                } catch (java.lang.ArrayIndexOutOfBoundsException e) {
+                    Utils.message("Incorrect operands.");
+                }
+                break;
+
+
             /**have to put this at last, if put branch() after this,
              *  case 3 and 4 will run branch() and create branch -- and branch commitID for some reason.*/
             case "checkout":
@@ -149,10 +164,10 @@ public class Main {
                     default:
                         Utils.message("Incorrect operands.");
                         break;
-
                 }
 
-            // TODO: FILL THE REST IN
+
+                // TODO: FILL THE REST IN
             // TODO: FILL THE REST IN
             // TODO: FILL THE REST IN
             // TODO: FILL THE REST IN

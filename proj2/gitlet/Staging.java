@@ -67,9 +67,8 @@ public class Staging implements Serializable {
     /**1. if the file is staged for add, remove it from stage.1)
      * 2. else if the file is tracked, remove the file from CWD
      * and stage it for removal => untrack for new commit
-     * failure case: neither staged nor tracked; */
-    public void rm(File file) {
-        String fileName = file.getName();
+     * failure case: neither staged nor tracked or wrong name; */
+    public void rm(String fileName) {
         String staged = fileToAdd.get(fileName);
         String prevID = tracked.get(fileName);
         /** 1) staged for addition */
@@ -78,7 +77,10 @@ public class Staging implements Serializable {
             /** 2) tracked */
         } else if (prevID != null) {
             fileToRemove.put(fileName, prevID);
-            Utils.restrictedDelete(file);
+            File file = Utils.join(Repository.CWD, fileName);
+            if (file.exists()){
+                Utils.restrictedDelete(file);
+            }
             //failure case;
         } else {
             System.out.println("No reason to remove the file.");

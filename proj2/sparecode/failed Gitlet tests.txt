@@ -1,0 +1,91 @@
+javac gitlet/*.java
+java gitlet.Main init
+
+java gitlet.Main add foo.txt
+java gitlet.Main commit "first commit"
+java gitlet.Main checkout ==
+java gitlet.Main status
+
+30. Branch:
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main branch other
+java gitlet.Main add g.txt
+java gitlet.Main add f.txt 
+java gitlet.Main commit "Main two files"
+java gitlet.Main checkout other
+* f.txt
+* g.txt
+
++ f.txt notwug.txt
+
+java gitlet.Main add f.txt
+java gitlet.Main commit "Alternative file"
+
+ = f.txt notwug.txt
+ * g.txt  does not exist
+
+java gitlet.Main checkout master
+= f.txt wug.txt
+= g.txt notwug.txt
+
+java gitlet.Main checkout other
+= f.txt notwug.txt
+ * g.txt
+
+32. file overwrite error
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main branch other
++ f.txt wug.txt
++ g.txt notwug.txt
+
+java gitlet.Main add g.txt
+java gitlet.Main add f.txt 
+java gitlet.Main commit "Main two files"
+E f.txt
+E g.txt
+
+java gitlet.Main checkout other
++ f.txt notwug.txt
+
+java gitlet.Main checkout master
+There is an untracked file in the way; delete it, or add and commit it first.
+
+37 reset1
+java gitlet.Main init
+java gitlet.Main add g.txt
+java gitlet.Main add f.txt
+java gitlet.Main commit "two files"
+java gitlet.Main branch other
+
++ h.txt wug2.txt
+java gitlet.Main add h.txt
+java gitlet.Main rm g.txt
+java gitlet.Main commit "Add h.txt and remove g.txt"
+java gitlet.Main checkout other
+java gitlet.Main rm f.txt
+
++ k.txt wug3.txt
+java gitlet.Main add k.txt
+java gitlet.Main commit "Add k.txt and remove f.txt"
+java gitlet.Main log
+
+java gitlet.Main checkout master
+java gitlet.Main log 
+//copy id for Two files 2172214a003850c65b0a8e6dcd85990f1346d8d1
+
+
++ m.txt wug.txt
+java gitlet.Main add m.txt
+java gitlet.Main reset $two
+java gitlet.Main status
+java gitlet.Main log
+java gitlet.Main checkout other
+java gitlet.Main log
+java gitlet.Main checkout master
+java gitlet.Main log
+java gitlet.Main reset $add h and remove g  1917be267fae8738f660fab04ac4c32fe79d7e57
+java gitlet.Main log
+
+
