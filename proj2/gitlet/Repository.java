@@ -644,7 +644,9 @@ public class Repository {
         }
         /**  Failure cases: 4) If an untracked file in the current commit
          * would be overwritten or deleted by the merge */
-        if (!getUntracked().isEmpty()) {
+        Branch mergeBranch = Branch.fromFile(branchName);
+        String mergeCommitID = mergeBranch.getHEAD();
+        if (!hasUntracked(mergeCommitID)) {
             Utils.message("There is an untracked file in the way; " +
                     "delete it, or add and commit it first.");
             System.exit(0);
@@ -664,11 +666,8 @@ public class Repository {
         /** find the head commit of current and given branch. */
         String currCommitID = getHeadCommitID();
         Commit currCommit = Commit.fromFile(currCommitID);
-        Branch mergeBranch = Branch.fromFile(branchName);
-        String mergeCommitID = mergeBranch.getHEAD();
         Commit mergeCommit = Commit.fromFile(mergeCommitID);
         Commit splitCommit = Commit.fromFile(splitPoint);
-
         /** collect all the files in all 3 commits. */
         HashSet<String> allFiles = new HashSet<>();
         allFiles.addAll(currCommit.getBlobList().keySet());
