@@ -683,44 +683,53 @@ public class Repository {
             String inSplit = splitCommit.getBlobList().get(key);
             String inCurr = currCommit.getBlobList().get(key);
             String inMerge = mergeCommit.getBlobList().get(key);
-            /** split - present; Current - present;
-             * Compare with merge */
-            if (inSplit != null && inCurr != null) {
-                /** deleted in merge, rm from staging Area
-                 * and CWD. */
-                if (inMerge == null) {
-                    rm(key);
-                /** split = curr != merge (not null). update to merge */
-                } else if (inSplit.equals(inCurr) && !inCurr.equals(inMerge)) {
+            /** split - absent */
+            if (inSplit == null) {
+                /** not in split, master and branch different version.
+                 * => conflict. */
+                if (inCurr != null && inMerge != null
+                        && !inCurr.equals(inMerge)) {
+                    conflict = mergeConflict(inCurr, inMerge, key);
+                    /** not in split, nor in curr, in merge.
+                     * => update to branch, add to stage. */
+                } else if (inCurr == null && inMerge!= null) {
                     saveNewContent(key, inMerge);
                     add(key);
-                /** split != curr */
-                } else if (!inSplit.equals(inCurr)) {
-                    /** present in split, modified in curr, deleted in merge.
-                     * => conflict */
-                    if (inMerge == null){
+                }
+                /** split present. */
+            } else {
+                /** deleted in curr. */
+                if (inCurr == null) {
+                    /** deleted in curr, modified in merge
+                     * => conflict. */
+                    if (!inMerge.equals(inSplit)) {
                         conflict = mergeConflict(inCurr, inMerge, key);
-                        /** curr != merge != split; create conflict. */
-                    } else if (!inCurr.equals(inSplit)
-                            && !inMerge.equals(inSplit)) {
+                    }
+                    /** same in curr */
+                } else if (inCurr.equals(inSplit)) {
+                    /** split = curr, deleted in merge
+                     * => remove */
+                    if (inMerge == null) {
+                        rm(key);
+                        /** split = curr != merge (present)
+                         * => update CWD file to merge
+                         * add to stage */
+                    } else if (!inMerge.equals(inSplit)) {
+                        saveNewContent(key, inMerge);
+                        add(key);
+                    }
+                    /** modified in curr. */
+                } else {
+                    /** modified in curr, deleted in merge.
+                     * => conflict */
+                    if (inMerge == null) {
+                        conflict = mergeConflict(inCurr, inMerge, key);
+                        /** all 3 are different => conflict. */
+                    } else if (!inMerge.equals(inSplit)
+                            && !inMerge.equals(inCurr)) {
                         conflict = mergeConflict(inCurr, inMerge, key);
                     }
                 }
-                /** split-present; curr-absent;merge-modified => conflict. */
-            } else if (inSplit != null && inCurr == null
-                    && !inSplit.equals(inMerge)) {
-                conflict = mergeConflict(inCurr, inMerge, key);
-                /** split - absent; Curr - present */
-            } else if (inSplit == null && inCurr != null
-                    && inMerge != null && !inCurr.equals(inMerge)) {
-                /** split-absent; curr-absent; branch absent
-                 * - remove file. */
-                conflict = mergeConflict(inCurr, inMerge, key);
-            /** split-absent; curr-absent; merge-present. */
-            } else if (inSplit == null
-                    && inCurr == null && inMerge != null) {
-                saveNewContent(key, inMerge);
-                add(key);
             }
         }
         String message = String.format("Merged %s into %s.", branchName, currentBranchName);
