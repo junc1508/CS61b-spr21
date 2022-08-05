@@ -698,23 +698,20 @@ public class Repository {
         /** curr != merge != split; create conflict. */
                     } else if (!inCurr.equals(inSplit)
                             && !inMerge.equals(inSplit)) {
-                        mergeConflict(inCurr, inMerge, key);
-                        conflict = true;
+                        conflict = mergeConflict(inCurr, inMerge, key);
                     }
                 }
         /** split - absent; Curr - present */
             } else if (inSplit == null && inCurr != null) {
                 /** branch absent - remove file. */
-                if (inMerge == null) {
-                    rm(key);
-                    /** curr != merge, conflict. */
-                } else if (!inCurr.equals(inMerge)) {
-                    mergeConflict(inCurr, inMerge, key);
-                    conflict = true;
+                 if (!inCurr.equals(inMerge) && inMerge != null) {
+                    conflict = mergeConflict(inCurr, inMerge, key);
                 }
+            /** split-absent; curr-absent; merge-present. */
             } else if (inSplit == null
                     && inCurr == null && inMerge != null) {
-                saveNewContent(key, inMerge);
+                File file = Utils.join(CWD, key);
+                Utils.writeContents(file, getContentFromSavedBlob(inMerge));
                 add(key);
             }
         }
@@ -756,7 +753,7 @@ public class Repository {
     /** update the content of CWD file with conflict from merge.
      * generate new blob
      * stage for addition */
-    public static void mergeConflict(
+    public static boolean mergeConflict(
             String CurrlobID, String mergeBlobID, String fileName) {
         //write content
         String currContent = getContentFromSavedBlob(CurrlobID);
@@ -770,6 +767,11 @@ public class Repository {
         blob.save();
         /** update staging area. */
         add(fileName);
+        return true;
     }
 
+    public static void test(){
+        File newVersion = Utils.join(CWD, "test.txt");
+        Utils.writeContents(newVersion, "test");
+    }
 }
