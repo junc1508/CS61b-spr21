@@ -134,9 +134,6 @@ public class Main {
                 break;
 
 
-            case "test":
-                test();
-                break;
             /**have to put this at last, if put branch() after this,
              *  case 3 and 4 will run branch() and create branch -- and branch commitID for some reason.*/
             case "checkout":

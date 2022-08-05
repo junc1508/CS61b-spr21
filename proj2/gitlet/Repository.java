@@ -430,7 +430,7 @@ public class Repository {
     public static void checkout(String commitName, String file) {
         checkGitletDir();
         String commitID = commitName;
-        if (commitName.length() == 6) {
+        if (commitName.length() == 8) {
             commitID = getCommitFromShortID(commitName);
         }
         if (commitID == null){
@@ -674,6 +674,7 @@ public class Repository {
         allFiles.addAll(mergeCommit.getBlobList().keySet());
         allFiles.addAll(splitCommit.getBlobList().keySet());
         /** change the content of file in CWD in 3 ways,
+         * 8 possibilities
          update to merge; delete; update to conflict;
          * update in staging area */
         for (String key : allFiles) {
@@ -689,29 +690,36 @@ public class Repository {
                  * and CWD. */
                 if (inMerge == null) {
                     rm(key);
-                /** curr is different from merge. */
-                } else if (!inCurr.equals(inMerge)) {
-                    if (inCurr.equals(inSplit)) {
-        /** curr == split, update CWD file to merge, and add to stage.*/
-                        saveNewContent(key, inMerge);
-                        add(key);
-        /** curr != merge != split; create conflict. */
+                /** split = curr != merge (not null). update to merge */
+                } else if (inSplit.equals(inCurr) && !inCurr.equals(inMerge)) {
+                    saveNewContent(key, inMerge);
+                    add(key);
+                /** split != curr */
+                } else if (!inSplit.equals(inCurr)) {
+                    /** present in split, modified in curr, deleted in merge.
+                     * => conflict */
+                    if (inMerge == null){
+                        conflict = mergeConflict(inCurr, inMerge, key);
+                        /** curr != merge != split; create conflict. */
                     } else if (!inCurr.equals(inSplit)
                             && !inMerge.equals(inSplit)) {
                         conflict = mergeConflict(inCurr, inMerge, key);
                     }
                 }
-        /** split - absent; Curr - present */
-            } else if (inSplit == null && inCurr != null) {
-                /** branch absent - remove file. */
-                 if (!inCurr.equals(inMerge) && inMerge != null) {
-                    conflict = mergeConflict(inCurr, inMerge, key);
-                }
+                /** split-present; curr-absent;merge-modified => conflict. */
+            } else if (inSplit != null && inCurr == null
+                    && !inSplit.equals(inMerge)) {
+                conflict = mergeConflict(inCurr, inMerge, key);
+                /** split - absent; Curr - present */
+            } else if (inSplit == null && inCurr != null
+                    && inMerge != null && !inCurr.equals(inMerge)) {
+                /** split-absent; curr-absent; branch absent
+                 * - remove file. */
+                conflict = mergeConflict(inCurr, inMerge, key);
             /** split-absent; curr-absent; merge-present. */
             } else if (inSplit == null
                     && inCurr == null && inMerge != null) {
-                File file = Utils.join(CWD, key);
-                Utils.writeContents(file, getContentFromSavedBlob(inMerge));
+                saveNewContent(key, inMerge);
                 add(key);
             }
         }
@@ -739,11 +747,10 @@ public class Repository {
             splitPoint = currBranchList.get(index);
             index++;
             }
-        /** 1) same as given branch head commit. */
+        /** 1) split same as given branch head commit. */
         if (index == givenSize) {     //in the last step index ++
             return "given";
         } else if (index == currSize) {
-            checkoutBranch(branchName);
             return "current";
         } else {
             return splitPoint;
@@ -756,8 +763,18 @@ public class Repository {
     public static boolean mergeConflict(
             String CurrlobID, String mergeBlobID, String fileName) {
         //write content
-        String currContent = getContentFromSavedBlob(CurrlobID);
-        String mergeContent = getContentFromSavedBlob(mergeBlobID);
+        String currContent;
+        String mergeContent;
+        if (CurrlobID == null) {
+            currContent = "";
+        } else {
+            currContent = getContentFromSavedBlob(CurrlobID);
+        }
+        if (mergeBlobID == null) {
+            mergeContent = "";
+        } else {
+            mergeContent = getContentFromSavedBlob(mergeBlobID);
+        }
         File newVersion = Utils.join(CWD, fileName);
         Utils.writeContents(newVersion, String.format(
                 "<<<<<<< HEAD%n%s=======%n%s>>>>>>>%n",
@@ -770,8 +787,5 @@ public class Repository {
         return true;
     }
 
-    public static void test(){
-        File newVersion = Utils.join(CWD, "test.txt");
-        Utils.writeContents(newVersion, "test");
-    }
+
 }

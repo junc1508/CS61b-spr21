@@ -89,3 +89,81 @@ java gitlet.Main reset $add h and remove g  1917be267fae8738f660fab04ac4c32fe79d
 java gitlet.Main log
 
 
+TEST merge
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main add f.txt
+java gitlet.Main add g.txt
+java gitlet.Main commit "commit 2 files"
+java gitlet.Main branch other
+
++ h.txt wug2.txt
+java gitlet.Main add h.txt
+java gitlet.Main rm g.txt
+java gitlet.Main commit "Add h.txt and remove g.txt"
+java gitlet.Main checkout other
+java gitlet.Main rm f.txt
+
+ + k.txt wug3.txt
+java gitlet.Main add k.txt
+java gitlet.Main commit "Add k.txt and remove f.txt"
+java gitlet.Main checkout master
+java gitlet.Main merge other
+* f.txt
+* g.txt
+= h.txt wug2.txt
+= k.txt wug3.txt
+
+
+Test merge rm conflicts
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main add f.txt
+java gitlet.Main add g.txt
+java gitlet.Main commit "commit 2 files"
+java gitlet.Main branch other
+
++ h.txt wug2.txt
+java gitlet.Main add h.txt
+java gitlet.Main rm g.txt
+
++ change f.txt + wug2.txt
+java gitlet.Main add f.txt
+java gitlet.Main commit "Add h.txt, remove g.txt, and change f.txt"
+java gitlet.Main checkout other
+java gitlet.Main rm f.txt
+
+ + k.txt wug3.txt
+java gitlet.Main add k.txt
+java gitlet.Main commit "Add k.txt and remove f.txt"
+java gitlet.Main checkout master
+java gitlet.Main log
+java gitlet.Main merge other 
+
+
+
+
+Test merge special
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main add f.txt
+java gitlet.Main add g.txt
+java gitlet.Main commit "commit 2 files"
+java gitlet.Main branch b1
+
++ h.txt wug2.txt
+java gitlet.Main add h.txt
+java gitlet.Main commit "Add h.txt"
+java gitlet.Main branch b2
+java gitlet.Main rm f.txt
+java gitlet.Main commit "remove f.txt"
+java gitlet.Main merge b1
+
+Given branch
+java gitlet.Main checkout b2
+java gitlet.Main merge master
+
+
+
+
+
