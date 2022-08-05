@@ -465,7 +465,7 @@ public class Repository {
     public static String getCommitFromShortID(String shortID) {
         List<String> allCommits = plainFilenamesIn(COMMIT_DIR);
         for (String i : allCommits) {
-            String shortCommit = i.substring(0, 6);
+            String shortCommit = i.substring(0, 8);
             if (shortCommit.equals(shortID)){
                 return i;
             }
@@ -627,23 +627,27 @@ public class Repository {
     public static boolean merge(String branchName) {
         /** Failure cases: 1) If there are staged additions or removals present */
         if (!stagingArea.getAdd().isEmpty() || !stagingArea.getRemove().isEmpty()) {
-            Utils.error("You have uncommitted changes.");
+            Utils.message("You have uncommitted changes.");
+            System.exit(0);
         }
         /** Failure cases: 2) If a branch with the given name does not exist. */
         File mergeBranchFile = Utils.join(BRANCH_DIR, branchName);
-        if (!mergeBranchFile.exists()){
-            Utils.error("A branch with that name does not exist.");
+        if (!mergeBranchFile.exists()) {
+            Utils.message("A branch with that name does not exist.");
+            System.exit(0);
         }
         /** Failure cases: 3) If attempting to merge a branch with itself. */
         String currentBranchName = getCurrBranchName();
         if (currentBranchName.equals(branchName)) {
-            Utils.error("Cannot merge a branch with itself.");
+            Utils.message("Cannot merge a branch with itself.");
+            System.exit(0);
         }
         /**  Failure cases: 4) If an untracked file in the current commit
          * would be overwritten or deleted by the merge */
         if (!getUntracked().isEmpty()) {
-            Utils.error("There is an untracked file in the way; " +
+            Utils.message("There is an untracked file in the way; " +
                     "delete it, or add and commit it first.");
+            System.exit(0);
         }
         /** check split point. */
         String splitPoint = findSplitPoint(branchName);
@@ -705,10 +709,14 @@ public class Repository {
                 if (inMerge == null) {
                     rm(key);
                     /** curr != merge, conflict. */
-                } else if (!inCurr.equals(inMerge)){
+                } else if (!inCurr.equals(inMerge)) {
                     mergeConflict(inCurr, inMerge, key);
                     conflict = true;
                 }
+            } else if (inSplit == null
+                    && inCurr == null && inMerge != null) {
+                saveNewContent(key, inMerge);
+                add(key);
             }
         }
         String message = String.format("Merged %s into %s.", branchName, currentBranchName);
