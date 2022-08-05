@@ -646,7 +646,7 @@ public class Repository {
          * would be overwritten or deleted by the merge */
         Branch mergeBranch = Branch.fromFile(branchName);
         String mergeCommitID = mergeBranch.getHEAD();
-        if (!hasUntracked(mergeCommitID)) {
+        if (hasUntracked(mergeCommitID)) {
             Utils.message("There is an untracked file in the way; " +
                     "delete it, or add and commit it first.");
             System.exit(0);
