@@ -2,6 +2,8 @@ package gitlet;
 
 import java.awt.*;
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
 
 import static gitlet.Repository.*;
 
@@ -133,7 +135,21 @@ public class Main {
                 }
                 break;
 
-
+            case "test":
+                HashMap<String, java.util.List<String>> graph = new HashMap<>();
+                HashMap<String, List<String>> color = new HashMap<>();
+                Commit curCommit = Commit.fromFile("10d226ba07860adb426eb5b433f923f05327043c");
+                Commit givenCommit = Commit.fromFile("12dea58b06b45d7001575d1e9e068b0e9bdd7ead");
+                addEdge(curCommit, graph, color, "red");
+                addEdge(givenCommit, graph, color,"blue");
+                for (String i: graph.keySet()) {
+                    System.out.print(i + ": ");
+                    for (String j: graph.get(i)) {
+                        System.out.print(j + " ");
+                    }
+                    System.out.println(";");
+                }
+                break;
             /**have to put this at last, if put branch() after this,
              *  case 3 and 4 will run branch() and create branch -- and branch commitID for some reason.*/
             case "checkout":

@@ -2,6 +2,7 @@ package gitlet;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -42,6 +43,8 @@ public class Repository {
     public static File HEAD = join(GITLET_DIR, "HEAD");
     /** Current branch name. */
     public static File CURBRANCH = join(GITLET_DIR, "CURBRANCH");
+    /** initial commit id. */
+    public static File INITID = join(GITLET_DIR, "INITID");
 
     /** return current branch name */
     public static String getCurrBranchName() {
@@ -73,8 +76,14 @@ public class Repository {
             } catch (IOException e) {
                 System.out.println("Cant create CURBRANCH");
             }
+            try {
+                INITID.createNewFile();
+            } catch (IOException e) {
+                System.out.println("Cant create INITID");
+            }
             Commit initCommit = new Commit();       //3)
             initCommit.saveCommit();
+            Utils.writeContents(INITID,initCommit.getCommitID());
             Branch master = new Branch(initCommit.getCommitID()); //4)
             master.saveBranch();
             master.saveHEAD();
@@ -702,7 +711,7 @@ public class Repository {
                 if (inCurr == null) {
                     /** deleted in curr, modified in merge
                      * => conflict. */
-                    if (!inMerge.equals(inSplit)) {
+                    if (inMerge != null && !inMerge.equals(inSplit)) {
                         conflict = mergeConflict(inCurr, inMerge, key);
                     }
                     /** same in curr */
@@ -738,34 +747,120 @@ public class Repository {
     }
 
     /** find the split point/latest common ancestor of current branch
-     * and given branch for merge function.
-     *
-     *  3) carry on with merge */
+     * and given branch for merge function.*/
     public static String findSplitPoint(String branchName){
         String currBranchName = getCurrBranchName();
         Branch currBranch = Branch.fromFile(currBranchName);
         Branch givenBranch = Branch.fromFile(branchName);
-        ArrayList<String> currBranchList = currBranch.getCommitList();
-        ArrayList<String> givenBranchList = givenBranch.getCommitList();
+        String currCommitID = currBranch.getHEAD();
+        String givenCommitID = givenBranch.getHEAD();
+        Commit currCommit = Commit.fromFile(currCommitID);
+        Commit givenCommit = Commit.fromFile(givenCommitID);
+        /** create graph for branches. Record the color for
+         * ancestors. ancestor for currCommit = red
+         * ancestor for mergeCommit: blue */
+        HashMap<String, List<String>> graph = new HashMap<>();
+        HashMap<String, List<String>> color = new HashMap<>();
+        addEdge(currCommit, graph, color, "red");
+        addEdge(givenCommit, graph, color,"blue");
+        //array to record distance to root, index is the distance
+        HashMap<String, Integer> disTo = new HashMap<>();
+        bfs(graph, disTo);
         String splitPoint = "";
-        int givenSize = givenBranchList.size();
-        int currSize = currBranchList.size();
-        int index = 0;
-        while (index < givenSize && index < currSize &&
-                currBranchList.get(index).equals(givenBranchList.get(index))) {
-            splitPoint = currBranchList.get(index);
-            index++;
+        int level = 0;
+        /** common ancestors contain both colors */
+        for (String i: color.keySet()) {
+            //latest common ancestor has largest disTo
+            if (color.get(i).size() == 2 && level <= disTo.get(i)) {
+                splitPoint = i;
+                level = disTo.get(i);
             }
-        /** 1) split same as given branch head commit. */
-        if (index == givenSize) {     //in the last step index ++
-            return "given";
-        } else if (index == currSize) {
-            return "current";
-        } else {
-            return splitPoint;
         }
+        return splitPoint;
+    }
+    /** Instead of DFS,
+     * add parent -> curr, second parent -> curr to graph,
+     * and color code ancestors for branch map. */
+    public static void addEdge(Commit commit,
+                               HashMap<String, List<String>> graph,
+                               HashMap<String, List<String>> ancestor,
+                               String color) {
+        String currID = commit.getCommitID();
+        String parentID = commit.getParent();
+        String secondParentID = commit.getSecondParent();
+        /** base case no parent -> init */
+        if (parentID == "") {
+            return;
+        } else if (graph.get(parentID) == null) {
+            //if parent does not exist, add parent, empty arraylist
+            graph.put(parentID, new ArrayList<>());
+            graph.get(parentID).add(currID);
+            ancestor.put(parentID, new ArrayList<>());
+            ancestor.get(parentID).add(color);
+        } else if (!graph.get(parentID).contains(currID)) {
+            //if parent exists, check if curr exists
+            graph.get(parentID).add(currID);
+            ancestor.get(parentID).add(color);
+        }
+        Commit parent = Commit.fromFile(parentID);
+        addEdge(parent, graph, ancestor, color);
+        if (!secondParentID.isEmpty()) {
+            if (graph.get(secondParentID) == null) {
+                graph.put(secondParentID, new ArrayList<>());
+                graph.get(secondParentID).add(currID);
+                ancestor.put(secondParentID, new ArrayList<>());
+                ancestor.get(secondParentID).add(color);
+            } else if (!graph.get(secondParentID).contains(currID)) {
+                graph.get(secondParentID).add(currID);
+                ancestor.get(secondParentID).add(color);
+            }
+            Commit secondParent = Commit.fromFile(secondParentID);
+            addEdge(secondParent, graph, ancestor, color);
+        }
+
     }
 
+    /** measure the distance of the ancestors to in graph
+     * initCommit with BFS */
+    public static void bfs(HashMap<String, List<String>> graph,
+                           HashMap<String, Integer> disTo) {
+        //map to record if the vertex is visited
+        HashMap<String, Boolean> marked = new HashMap<>();
+        //queue to record node to visit.
+        Queue<String> nodeToVisit = new LinkedList<>();
+        // visit the init commit (root)
+        String commitID = Utils.readContentsAsString(INITID);
+        marked.put(commitID, true);
+        //set root level = 0
+        disTo.put(commitID,0);
+        //add root to queue
+        nodeToVisit.add(commitID);
+        //if there is unvisited node in the queue
+        while (!nodeToVisit.isEmpty()) {
+            /** poll the node from queue to look for next level
+             *  poll returns null when list is empty,
+             *  remove throws an error */
+            /** pull next node from queue, everything in
+             * the queue is visited */
+            String nextNode = nodeToVisit.poll();
+            //for all the neighbor of next node
+            if (graph.get(nextNode) != null) {
+                for (String i : graph.get(nextNode)) {
+                    //if the neighbor is not visited
+                    if (!marked.containsKey(i)){
+                        //vist neighbor
+                        marked.put(i, true);
+                        //distance to root = 1 + previous distance
+                        int level = disTo.get(nextNode) + 1;
+                        disTo.put(i, level);
+                        //add the neighbor to queue
+                        nodeToVisit.add(i);
+                    }  //else if visited, skip
+                }
+            }
+
+        }
+    }
     /** update the content of CWD file with conflict from merge.
      * generate new blob
      * stage for addition */

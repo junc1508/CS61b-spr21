@@ -141,8 +141,6 @@ java gitlet.Main log
 java gitlet.Main merge other 
 
 
-
-
 Test merge special
 javac gitlet/*.java
 java gitlet.Main init
@@ -162,6 +160,45 @@ java gitlet.Main merge b1
 Given branch
 java gitlet.Main checkout b2
 java gitlet.Main merge master
+
+
+Merge parent 2
+javac gitlet/*.java
+java gitlet.Main init
+java gitlet.Main branch B1
+java gitlet.Main branch B2
+java gitlet.Main checkout B1
+
++ h.txt wug.txt
+java gitlet.Main add h.txt
+java gitlet.Main commit "Add h.txt"
+java gitlet.Main checkout B2
+
++ f.txt wug.txt
+java gitlet.Main add f.txt
+java gitlet.Main commit "f.txt added"
+java gitlet.Main branch C1
+
++ g.txt notwug.txt
+java gitlet.Main add g.txt
+java gitlet.Main rm f.txt
+java gitlet.Main commit "g.txt added, f.txt removed."
+
+= g.txt notwug.txt
+* f.txt
+* h.txt
+java gitlet.Main checkout B1
+= h.txt wug.txt
+* f.txt
+* g.txt
+java gitlet.Main merge C1
+= f.txt wug.txt
+= h.txt wug.txt
+* g.txt
+java gitlet.Main merge B2
+* f.txt
+= g.txt notwug.txt
+= h.txt wug.txt
 
 
 
