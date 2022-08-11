@@ -655,25 +655,27 @@ public class Repository {
          * would be overwritten or deleted by the merge */
         Branch mergeBranch = Branch.fromFile(branchName);
         String mergeCommitID = mergeBranch.getHEAD();
+
         if (hasUntracked(mergeCommitID)) {
             Utils.message("There is an untracked file in the way; " +
                     "delete it, or add and commit it first.");
             System.exit(0);
         }
+
         /** check split point. */
         String splitPoint = findSplitPoint(branchName);
         /** flag for conflict. */
         boolean conflict = false;
-        if (splitPoint == "given") {
+        String currCommitID = getHeadCommitID();
+        if (splitPoint == mergeCommitID) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
-        } else if (splitPoint == "current") {
+        } else if (splitPoint == currCommitID) {
             checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
         /** find the head commit of current and given branch. */
-        String currCommitID = getHeadCommitID();
         Commit currCommit = Commit.fromFile(currCommitID);
         Commit mergeCommit = Commit.fromFile(mergeCommitID);
         Commit splitCommit = Commit.fromFile(splitPoint);
