@@ -50,6 +50,7 @@ public class Branch implements Serializable {
     public void saveHEAD() {
         File headFile = Utils.join(Repository.HEAD);
         Utils.writeContents(headFile, this.headCommitID);
+
     }
 
     /** Save current branch name. */

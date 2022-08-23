@@ -203,4 +203,28 @@ java gitlet.Main merge B2
 
 
 
+ case "test":
+                Commit currCommit = Commit.fromFile("f415110b44a44ee10f0bec5b87dfc28c522a6dc5");
+                Commit givenCommit = Commit.fromFile("216e3e5d697a7592f3d6b402936d169ca3100cc5");
+                HashMap<String, List<String>> graph = new HashMap<>();
+                HashMap<String, List<String>> color = new HashMap<>();
+                addEdge(currCommit, graph, color, "red");
+                addEdge(givenCommit, graph, color,"blue");
+                for (String i : color.keySet()) {
+                    System.out.print(i + ": ");
+                    for (String j : color.get(i)) {
+                        System.out.print(j);
+                    }
+                    System.out.println(";");
+                }
+                System.out.println("\n");
+                for (String i : graph.keySet()) {
+                    System.out.print(i + ": ");
+                    for (String j : graph.get(i)) {
+                        System.out.print(j);
+                    }
+                    System.out.println(";");
+                }
 
+                System.out.println(findSplitPoint("b1"));
+                break;

@@ -667,10 +667,10 @@ public class Repository {
         /** flag for conflict. */
         boolean conflict = false;
         String currCommitID = getHeadCommitID();
-        if (splitPoint == mergeCommitID) {
+        if (splitPoint.equals(mergeCommitID)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
-        } else if (splitPoint == currCommitID) {
+        } else if (splitPoint.equals(currCommitID)) {
             checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
@@ -790,36 +790,42 @@ public class Repository {
         String currID = commit.getCommitID();
         String parentID = commit.getParent();
         String secondParentID = commit.getSecondParent();
-        /** base case no parent -> init */
-        if (parentID == "") {
-            return;
-        } else if (graph.get(parentID) == null) {
-            //if parent does not exist, add parent, empty arraylist
-            graph.put(parentID, new ArrayList<>());
-            graph.get(parentID).add(currID);
-            ancestor.put(parentID, new ArrayList<>());
-            ancestor.get(parentID).add(color);
-        } else if (!graph.get(parentID).contains(currID)) {
-            //if parent exists, check if curr exists
-            graph.get(parentID).add(currID);
-            ancestor.get(parentID).add(color);
+        /** add the current ID to the tree, with no child,
+         * so the graph can have all the vertice */
+        if (graph.get(currID) == null) {
+            graph.put(currID, new ArrayList<>());
+            ancestor.put(currID, new ArrayList<>());
         }
-        Commit parent = Commit.fromFile(parentID);
-        addEdge(parent, graph, ancestor, color);
-        if (!secondParentID.isEmpty()) {
-            if (graph.get(secondParentID) == null) {
-                graph.put(secondParentID, new ArrayList<>());
-                graph.get(secondParentID).add(currID);
-                ancestor.put(secondParentID, new ArrayList<>());
-                ancestor.get(secondParentID).add(color);
-            } else if (!graph.get(secondParentID).contains(currID)) {
-                graph.get(secondParentID).add(currID);
-                ancestor.get(secondParentID).add(color);
-            }
-            Commit secondParent = Commit.fromFile(secondParentID);
-            addEdge(secondParent, graph, ancestor, color);
-        }
+        ancestor.get(currID).add(color);
+        addEdgeHelp(currID, parentID, graph, ancestor, color);
+        addEdgeHelp(currID, secondParentID, graph, ancestor, color);
 
+    }
+    /** add parent => curr edges to the graph.
+     * starting from current commit */
+    private static void addEdgeHelp(String currID, String parentID,
+                                    HashMap<String, List<String>> graph,
+                                    HashMap<String, List<String>> ancestor,
+                                    String color) {
+        /** base case no parent -> init */
+       if (!parentID.isEmpty()) {
+            if (graph.get(parentID) == null) {
+                //if parent does not exist, add parent, empty arraylist
+                graph.put(parentID, new ArrayList<>());
+                graph.get(parentID).add(currID);
+                ancestor.put(parentID, new ArrayList<>());
+            } else if (!graph.get(parentID).contains(currID)) {
+                //if parent exists, check if curr exists
+                graph.get(parentID).add(currID);
+            }
+            ancestor.get(parentID).add(color);
+            Commit nextCommit = Commit.fromFile(parentID);
+            String nextCommitID = nextCommit.getCommitID();
+            String nextParentID = nextCommit.getParent();
+            addEdgeHelp(nextCommitID, nextParentID, graph, ancestor, color);
+        } else {
+           return; //no parent = init, done.
+       }
     }
 
     /** measure the distance of the ancestors to in graph
